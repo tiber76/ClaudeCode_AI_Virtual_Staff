@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+*~
+
+# Runs de test local (si le kit est testé en place)
+test-project/
+sandbox/
+
+# Backups générés par /setup-project
+*.backup-*/
+backlog.backup-*.md
+
+# Node (si scripts JS ajoutés plus tard)
+node_modules/
+package-lock.json

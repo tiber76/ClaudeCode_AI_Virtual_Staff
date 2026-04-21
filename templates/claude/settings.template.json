@@ -1,0 +1,31 @@
+{
+  "_comment": "Template minimal de settings.local.json — à compléter selon ton projet. NE PAS versionner (ajouter .claude/settings.local.json au .gitignore).",
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(npx jest:*)",
+      "Bash(npx playwright:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git branch:*)",
+      "Bash(git merge:*)",
+      "Bash(git fetch:*)",
+      "Bash(gh pr:*)",
+      "Bash(gh api:*)",
+      "Bash(gh run:*)",
+      "Bash(gh auth:*)",
+      "WebSearch"
+    ]
+  },
+  "env": {
+    "DEBUG": "false"
+  }
+}
