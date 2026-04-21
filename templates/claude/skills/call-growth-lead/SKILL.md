@@ -1,5 +1,5 @@
 ---
-name: growth-lead
+name: call-growth-lead
 description: |
   Orchestrateur multi-agents commerce & marketing. Tu formules un besoin en texte
   libre, l'orchestrateur convoque dynamiquement une équipe virtuelle (Growth Lead,
@@ -24,18 +24,18 @@ triggers:
   - lance le growth
 ---
 
-# /growth-lead
+# /call-growth-lead
 
 ## Objectif
 
 Orchestrer une équipe virtuelle d'experts commerciaux & marketing sur {{PROJECT_NAME}} ({{PROJECT_DESCRIPTION}}) pour mener une initiative (campagne, landing, séquence sales, audit funnel, série contenu) de l'idée aux livrables prêts à publier.
 
-**Pas un clone du /tech-lead** : pas d'implémentation code, pas de PR auto. Les livrables sont des **artefacts** (briefs, copies, plans, rapports) dans `docs/growth/` que l'utilisateur publie ensuite lui-même.
+**Pas un clone du /call-tech-lead** : pas d'implémentation code, pas de PR auto. Les livrables sont des **artefacts** (briefs, copies, plans, rapports) dans `docs/growth/` que l'utilisateur publie ensuite lui-même.
 
 ## Format d'invocation
 
 ```
-/growth-lead <besoin en texte libre> [--mode=auto|semi]
+/call-growth-lead <besoin en texte libre> [--mode=auto|semi]
 ```
 
 - **Mode par défaut** : `semi` (checkpoints aux 3 jalons clés : brief validé / plan validé / livrables prêts).
@@ -72,7 +72,7 @@ Agents dans `.claude/agents/` :
 
 1. Parse le besoin et `--mode` (défaut : `semi`).
 2. Détermine un slug kebab-case à partir du besoin.
-3. Crée `.claude/growth-lead-runs/<YYYYMMDD-HHMMSS>-<slug>/` (hors git).
+3. Crée `.claude/call-call-growth-lead-runs/<YYYYMMDD-HHMMSS>-<slug>/` (hors git).
 4. Écrit `00-input.md` avec le besoin verbatim + mode + timestamp.
 5. Crée le dossier livrable cible dans `docs/growth/` si besoin (ex : `docs/growth/landings/<slug>/`).
 6. Initialise `TRANSCRIPT.md` avec l'en-tête.
@@ -202,7 +202,7 @@ Si "oui" → produit un **ship plan** : liste ordonnée de ce que l'utilisateur 
 
 ## Format TRANSCRIPT.md
 
-Mis à jour incrémentalement à chaque phase. Format similaire au `/tech-lead` :
+Mis à jour incrémentalement à chaque phase. Format similaire au `/call-tech-lead` :
 
 ```markdown
 # TRANSCRIPT — <titre initiative> — run <timestamp>
@@ -311,12 +311,12 @@ Mis à jour incrémentalement à chaque phase. Format similaire au `/tech-lead` 
 Le skill refuse et propose une alternative si :
 - **Question simple** ("c'est quoi un bon CTR ?") → réponse directe sans orchestration
 - **Brief déjà existant + besoin mineur** → suggère direct `/redige-brief` ou l'agent solo
-- **Sujet sans enjeu commercial** (ex : améliorer une UI) → renvoie vers `/tech-lead`
+- **Sujet sans enjeu commercial** (ex : améliorer une UI) → renvoie vers `/call-tech-lead`
 - **Action d'exécution pure** (ex : "poste ce tweet") → refuse, pas dans le scope
 
-## Garde-fou spécial : interactions avec `/tech-lead`
+## Garde-fou spécial : interactions avec `/call-tech-lead`
 
-**Principe absolu** : `/tech-lead` **ne consulte PAS les agents commerciaux par défaut**, même sur signal fort.
+**Principe absolu** : `/call-tech-lead` **ne consulte PAS les agents commerciaux par défaut**, même sur signal fort.
 
 Raisons :
 1. Coût tokens (ajouter 2-3 agents Opus/Sonnet = +30-40% de tokens par run tech-lead)
@@ -325,11 +325,11 @@ Raisons :
 
 **Protocole quand tech-lead identifie un signal commercial fort** (feature pricing, différenciateur majeur, nouveau segment cible, refonte pricing) :
 
-1. `/tech-lead` **détecte** le signal (pas auto-invoque).
-2. `/tech-lead` **propose** à l'utilisateur en phase 1 routing : "Cette feature touche le pricing / différenciateur. Je peux consulter l'équipe commerciale (growth-lead{{#IF IS_B2B}} + sales-b2b{{/IF}}) → +~100k tokens. Oui / Non ?"
+1. `/call-tech-lead` **détecte** le signal (pas auto-invoque).
+2. `/call-tech-lead` **propose** à l'utilisateur en phase 1 routing : "Cette feature touche le pricing / différenciateur. Je peux consulter l'équipe commerciale (growth-lead{{#IF IS_B2B}} + sales-b2b{{/IF}}) → +~100k tokens. Oui / Non ?"
 3. **Par défaut : Non**. L'utilisateur opt-in explicitement.
 4. Si l'utilisateur dit "oui" → tech-lead délègue à `growth-lead` (agent, pas skill) avec le contexte de l'US.
-5. En **mode auto** : tech-lead **n'appelle jamais** les agents commerciaux. Il documente le signal dans TRANSCRIPT : "Signal commercial détecté (refonte pricing). En mode auto, pas d'escalade équipe commerciale — à consulter manuellement via `/growth-lead` si besoin."
+5. En **mode auto** : tech-lead **n'appelle jamais** les agents commerciaux. Il documente le signal dans TRANSCRIPT : "Signal commercial détecté (refonte pricing). En mode auto, pas d'escalade équipe commerciale — à consulter manuellement via `/call-growth-lead` si besoin."
 
 ## 💰 Coût tokens — transparence obligatoire
 
@@ -340,7 +340,7 @@ Raisons :
 Le skill **doit afficher** avant de commencer :
 
 ```
-💰 Estimation coût — /growth-lead
+💰 Estimation coût — /call-growth-lead
 ────────────────────────────────
 Scope détecté : <routing phase 1 preview>
 Agents : <liste> (<N> agents)
@@ -399,15 +399,15 @@ En **mode auto** : affiche l'estimation mais continue sans attendre.
 
 ### Optimisations disponibles
 
-Voir `docs/COUTS-LLM.md` pour les 10 optimisations SANS baisse de qualité. Les principales applicables à `/growth-lead` :
+Voir `docs/COUTS-LLM.md` pour les 10 optimisations SANS baisse de qualité. Les principales applicables à `/call-growth-lead` :
 
-1. **Référencer un brief existant** (`/growth-lead "exécute BRIEF-X.md"`) (-30%)
-2. **Skills utilitaires solo** quand le scope est étroit (ex: `/ship-landing` seul vs `/growth-lead` full)
+1. **Référencer un brief existant** (`/call-growth-lead "exécute BRIEF-X.md"`) (-30%)
+2. **Skills utilitaires solo** quand le scope est étroit (ex: `/ship-landing` seul vs `/call-growth-lead` full)
 3. **Scope agents** explicite ("skip content-seo, pas de besoin SEO") (-15-30%)
 4. **Mode semi** pour arrêter tôt si direction divergente
 5. **Agent solo** pour questions fermées (-90%)
 
-**Comparaison `/tech-lead` vs `/growth-lead`** : growth ~50% moins cher que tech car pas d'implémentation code (phases 6-7 tech sont les plus lourdes).
+**Comparaison `/call-tech-lead` vs `/call-growth-lead`** : growth ~50% moins cher que tech car pas d'implémentation code (phases 6-7 tech sont les plus lourdes).
 
 **Sur plan Max 20x** : 1 run ≈ 3-5% d'une session Opus. Budget : 60-100 runs/semaine confortable.
 
@@ -419,7 +419,7 @@ Voir `docs/COUTS-LLM.md` pour les 10 optimisations SANS baisse de qualité. Les 
 - ❌ Sauter Phase 3 (avis indépendants) → c'est la valeur du multi-agents.
 - ❌ Ignorer les débats → Phase 4 est où la qualité se joue.
 - ❌ Envoyer un email / faire un post / créer un compte externe → jamais.
-- ❌ S'auto-invoquer via `/tech-lead` → interdit, l'utilisateur opt-in manuellement.
+- ❌ S'auto-invoquer via `/call-tech-lead` → interdit, l'utilisateur opt-in manuellement.
 
 ## Intégration avec skills utilitaires
 

@@ -41,7 +41,7 @@ Exemples de ce qui va dans §10 :
 - Patterns de migration progressive (ex: V1 → V2 coexistent avec règles précises)
 - Invariants data non documentés ailleurs
 
-À remplir **avant** ton premier `/tech-lead` important.
+À remplir **avant** ton premier `/call-tech-lead` important.
 
 ### 2. Enrichir le GUIDE-LLM §12 (Pièges connus)
 
@@ -105,7 +105,7 @@ Exemples réalistes :
 - `accessibility-auditor.md` — expert WCAG 2.2 + screen readers + axe-core
 
 Base-toi sur `_TEMPLATE-agent.md` pour la structure. N'oublie pas de :
-1. Ajouter l'agent à la matrice de routing dans `.claude/skills/tech-lead/SKILL.md` (phase 1)
+1. Ajouter l'agent à la matrice de routing dans `.claude/skills/call-tech-lead/SKILL.md` (phase 1)
 2. Ajouter l'agent à `docs/EQUIPES-LLM.md`
 3. Définir son modèle (Opus pour raisonnement complexe, Sonnet sinon)
 
@@ -154,7 +154,7 @@ Ne cherche pas à tout configurer parfaitement dès le jour 1. Itère :
 ### Semaine 1
 - `/setup-project` pour le gros œuvre.
 - Remplis §6 (Architecture) et §7 (Sécurité) du GUIDE-LLM à la main.
-- Lance 2-3 features via `/tech-lead` pour valider que la mécanique tourne.
+- Lance 2-3 features via `/call-tech-lead` pour valider que la mécanique tourne.
 
 ### Semaines 2-4
 - Après chaque feature : `/retro` → enrichit §12 avec les pièges rencontrés.
@@ -186,10 +186,10 @@ Fichier à la racine, pas dans `docs/`. Il est **lu en début de session**. Si t
 Garde 400-500 lignes max au démarrage. §12 se remplit au fil du temps via `/retro`.
 
 ### 6. Ne pas tester avec un run à blanc
-Lance un `/redige-us` test **avant** de lancer un vrai `/tech-lead`. Si `/redige-us` produit des choses bizarres, `/tech-lead` produira du pire.
+Lance un `/redige-us` test **avant** de lancer un vrai `/call-tech-lead`. Si `/redige-us` produit des choses bizarres, `/call-tech-lead` produira du pire.
 
 ### 7. Ignorer les signaux de sur-orchestration
-Si `/tech-lead` déclenche 6 agents pour une feature qui aurait pu être faite en 30 min d'`Edit` direct, tu as un problème de routing — soit le skill détecte trop de signaux, soit tu dois apprendre à passer par des skills plus ciblés (`/lead-tech` seul, agent solo).
+Si `/call-tech-lead` déclenche 6 agents pour une feature qui aurait pu être faite en 30 min d'`Edit` direct, tu as un problème de routing — soit le skill détecte trop de signaux, soit tu dois apprendre à passer par des skills plus ciblés (`/fullstack-lead-tech` seul, agent solo).
 
 ---
 

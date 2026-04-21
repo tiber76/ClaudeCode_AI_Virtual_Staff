@@ -48,5 +48,5 @@ En tant que `<persona>`, je veux `<action>` afin de `<bénéfice>`.
 ## Questions ouvertes / hypothèses
 - [ ] <tout ce qui n'a pas été tranché, avec hypothèse par défaut si pertinent>
 
-## Dépendances techniques pressenties (à confirmer par /lead-tech)
+## Dépendances techniques pressenties (à confirmer par /fullstack-lead-tech)
 - <ex: nouvelle table DB, nouvelle route API, envoi email>

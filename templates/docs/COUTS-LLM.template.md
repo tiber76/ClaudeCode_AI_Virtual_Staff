@@ -20,16 +20,16 @@ Estimations des coûts d'usage des skills et agents, par run. À actualiser avec
 
 | Skill | Tokens brut | Avec cache 90% | Équivalent API | % session Opus 5h (Max 20x) |
 |---|---|---|---|---|
-| `/tech-lead` (feature complète, 6 agents) | 600k-1.4M | 150-350k | **$2-5** | 5-10% |
-| `/tech-lead` (refacto simple) | 200-400k | 50-100k | $0.7-1.5 | 2-3% |
-| `/growth-lead` (initiative 6 agents) | 300-800k | 80-230k | **$1-4** | 3-8% |
+| `/call-tech-lead` (feature complète, 6 agents) | 600k-1.4M | 150-350k | **$2-5** | 5-10% |
+| `/call-tech-lead` (refacto simple) | 200-400k | 50-100k | $0.7-1.5 | 2-3% |
+| `/call-growth-lead` (initiative 6 agents) | 300-800k | 80-230k | **$1-4** | 3-8% |
 | `/audit-funnel`, `/ship-landing` (solo) | 80-200k | 30-60k | $0.4-1 | 1-2% |
 | `/redige-us`, `/redige-brief`, `/retro*` | 30-80k | 10-25k | $0.1-0.3 | <1% |
 | Agent solo (invocation directe) | 20-50k | 10-20k | $0.05-0.5 | <1% |
 
 ---
 
-## Répartition type d'un `/tech-lead` complet
+## Répartition type d'un `/call-tech-lead` complet
 
 | Phase | Tokens | % total |
 |---|---|---|
@@ -56,13 +56,13 @@ Le skill doit refuser de convoquer l'équipe pour : typo, one-liner, refacto min
 Plus tu donnes de contexte pertinent (fichiers concernés, US existante, contraintes), moins les agents consomment en clarification.
 
 ### 3. Réutiliser les artefacts — économie 30%
-Au lieu de `/tech-lead "implémente X"`, passer `/tech-lead "implémente PLAN-X.md"` référence un plan déjà produit.
+Au lieu de `/call-tech-lead "implémente X"`, passer `/call-tech-lead "implémente PLAN-X.md"` référence un plan déjà produit.
 
 ### 4. Agent solo pour questions fermées — économie 90%
 "Demande à `sales-b2b` : comment répondre à 'on a déjà Lever' ?" — pas besoin d'orchestrateur complet.
 
-### 5. `/lead-tech` seul si US claire — économie 60-80%
-Si tu as une US bien cadrée et que tu n'as pas besoin de débats, `/lead-tech` produit le plan tech direct, sans orchestration multi-agents.
+### 5. `/fullstack-lead-tech` seul si US claire — économie 60-80%
+Si tu as une US bien cadrée et que tu n'as pas besoin de débats, `/fullstack-lead-tech` produit le plan tech direct, sans orchestration multi-agents.
 
 ### 6. Mode auto pour runs longs sans décision critique
 Libère le dev (pas de checkpoints), budget préservé sur des features "classiques".
@@ -94,8 +94,8 @@ Seuls 2 agents en Opus par défaut (full-stack-lead, cso côté tech ; growth-le
 ## Budget sur plan Claude Max 20x
 
 Typiquement :
-- **1 run `/tech-lead` ≈ 5-10% d'une session Opus 5h**
-- Budget confortable : **60-160 runs `/tech-lead` / semaine** sans toucher le weekly cap Opus
+- **1 run `/call-tech-lead` ≈ 5-10% d'une session Opus 5h**
+- Budget confortable : **60-160 runs `/call-tech-lead` / semaine** sans toucher le weekly cap Opus
 - Si tu approches le cap Opus : passe `full-stack-lead` et `cso` en Sonnet temporairement.
 
 ---

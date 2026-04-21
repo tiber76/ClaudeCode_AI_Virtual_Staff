@@ -1,5 +1,5 @@
 ---
-name: tech-lead
+name: call-tech-lead
 description: |
   Orchestrateur multi-agents. Tu formules un besoin en texte libre, l'orchestrateur
   convoque dynamiquement une équipe virtuelle (Full-Stack Lead, PO Métier, Designer
@@ -24,7 +24,7 @@ triggers:
   - lance le tech lead
 ---
 
-# /tech-lead
+# /call-tech-lead
 
 ## Objectif
 Orchestrer une équipe virtuelle d'experts spécialisés sur {{PROJECT_NAME}} ({{PROJECT_DESCRIPTION}}) pour mener une feature de l'idée à la PR ouverte, avec débats francs et traçabilité complète.
@@ -32,7 +32,7 @@ Orchestrer une équipe virtuelle d'experts spécialisés sur {{PROJECT_NAME}} ({
 ## Format d'invocation
 
 ```
-/tech-lead <besoin en texte libre> [--mode=auto|semi]
+/call-tech-lead <besoin en texte libre> [--mode=auto|semi]
 ```
 
 - **Mode par défaut** : `semi` (checkpoints aux 3 jalons clés).
@@ -59,14 +59,14 @@ Agents tech dans `.claude/agents/` :
 {{#IF HAS_GROWTH_TEAM}}
 ### Équipe commerciale & marketing — consultation OPT-IN uniquement
 
-6 agents commerciaux existent aussi (growth-lead, sales-b2b, customer-success, copywriter-brand, content-seo, marketing-analytics). **Ils ne sont JAMAIS convoqués automatiquement par `/tech-lead`.**
+6 agents commerciaux existent aussi (growth-lead, sales-b2b, customer-success, copywriter-brand, content-seo, marketing-analytics). **Ils ne sont JAMAIS convoqués automatiquement par `/call-tech-lead`.**
 
 Protocole strict :
 1. Si un signal commercial fort est détecté en phase 1 (feature pricing / différenciateur / refonte plan / nouveau segment), tech-lead **propose** à l'utilisateur via `AskUserQuestion` :
    > "Signal commercial détecté : `<raison>`. Veux-tu consulter l'équipe commerciale (growth-lead{{#IF IS_B2B}} + sales-b2b{{/IF}}, +~100k tokens) ? Oui / Non."
 2. **Par défaut : Non**. L'utilisateur doit opt-in explicitement.
-3. En **mode auto** : tech-lead **n'escalade jamais** vers l'équipe commerciale. Il documente le signal dans TRANSCRIPT : "Signal commercial détecté `<raison>`. Mode auto — pas d'escalade. À consulter manuellement via `/growth-lead` si besoin."
-4. Pour lancer une initiative commerciale indépendante → `/growth-lead <besoin>`.
+3. En **mode auto** : tech-lead **n'escalade jamais** vers l'équipe commerciale. Il documente le signal dans TRANSCRIPT : "Signal commercial détecté `<raison>`. Mode auto — pas d'escalade. À consulter manuellement via `/call-growth-lead` si besoin."
+4. Pour lancer une initiative commerciale indépendante → `/call-growth-lead <besoin>`.
 {{/IF}}
 
 ## Garde-fous absolus (règle §0 GUIDE-LLM)
@@ -86,7 +86,7 @@ Protocole strict :
 
 1. Parse le besoin et `--mode` (défaut : `semi`).
 2. Détermine un slug kebab-case à partir du besoin.
-3. Crée `.claude/tech-lead-runs/<YYYYMMDD-HHMMSS>-<slug>/` (inclus dans `.gitignore`).
+3. Crée `.claude/call-call-tech-lead-runs/<YYYYMMDD-HHMMSS>-<slug>/` (inclus dans `.gitignore`).
 4. Écrit `00-input.md` avec le besoin verbatim + mode + timestamp.
 5. **Vérifie la branche courante** :
    - Si `{{GIT_DEFAULT_BRANCH}}` à jour → `git checkout -b {{GIT_PREFIX_FEATURE}}<slug>`.
@@ -217,7 +217,7 @@ Tech-lead consolide :
 - US validée
 - Avis round 1
 - Arbitrages débats round 2
-- Plan technique complet en appelant `/lead-tech` en sous-routine (qui produit un plan structuré avec UX/UI, tests, sécu, perf)
+- Plan technique complet en appelant `/fullstack-lead-tech` en sous-routine (qui produit un plan structuré avec UX/UI, tests, sécu, perf)
 
 Output → `05-plan-final.md` + copie dans `docs/plans/PLAN-<slug>.md`.
 
@@ -294,7 +294,7 @@ URL sauvée dans `09-pr.md`. Update TRANSCRIPT avec URL finale.
 
 ## TRANSCRIPT.md — format détaillé
 
-**Mis à jour incrémentalement à chaque phase** (pas écrit en une fois à la fin). L'utilisateur peut faire `tail -f .claude/tech-lead-runs/<slug>/TRANSCRIPT.md` en direct.
+**Mis à jour incrémentalement à chaque phase** (pas écrit en une fois à la fin). L'utilisateur peut faire `tail -f .claude/call-call-tech-lead-runs/<slug>/TRANSCRIPT.md` en direct.
 
 Format complet :
 
@@ -485,18 +485,18 @@ Le skill refuse de convoquer l'équipe et propose une alternative si le besoin e
 - **Typo / correction cosmétique** → "Utilise directement `Edit` sur le fichier, l'équipe est surqualifiée."
 - **Bug existant** → "Utilise plutôt `/investigate-bug` pour trouver la cause racine, puis on orchestrera si besoin de refacto."
 - **Question de doc / explication** → "Pas besoin de coder, je peux expliquer."
-- **Refacto interne simple** → "Utilise `/lead-tech` + implémentation directe, pas besoin d'équipe."
+- **Refacto interne simple** → "Utilise `/fullstack-lead-tech` + implémentation directe, pas besoin d'équipe."
 
 Garde-fou de sur-qualité.
 
 ## Intégration avec les skills existants
 
-Le skill `/tech-lead` **appelle** les skills existants comme sous-routines :
+Le skill `/call-tech-lead` **appelle** les skills existants comme sous-routines :
 
 | Skill | Utilisé en phase |
 |---|---|
 | `/redige-us` | Phase 2 (via agent `po-metier`) |
-| `/lead-tech` | Phase 5 (synthèse plan) |
+| `/fullstack-lead-tech` | Phase 5 (synthèse plan) |
 | `/review-pr` | Phase 7 |
 | `/qa-flow` | Phase 7 |
 | `/ship-pr` | Phase 8 |
@@ -507,7 +507,7 @@ Le skill `/tech-lead` **appelle** les skills existants comme sous-routines :
 {{#IF HAS_GROWTH_TEAM}}
 ### Skills commerciaux/marketing — jamais invoqués auto
 
-`/growth-lead`, `/redige-brief`, `/ship-landing`, `/audit-funnel`, `/brief-demo`, `/retro-campagne` sont des **skills peer**, pas des sous-routines. Tech-lead ne les appelle jamais automatiquement. Si un signal commercial émerge, escalade opt-in uniquement (voir section Routing).
+`/call-growth-lead`, `/redige-brief`, `/ship-landing`, `/audit-funnel`, `/brief-demo`, `/retro-campagne` sont des **skills peer**, pas des sous-routines. Tech-lead ne les appelle jamais automatiquement. Si un signal commercial émerge, escalade opt-in uniquement (voir section Routing).
 {{/IF}}
 
 ## Répartition Opus / Sonnet (optimisée Max 20x)
@@ -537,7 +537,7 @@ Pour préserver le quota Opus hebdomadaire du plan Claude Max 20x, seuls les age
 Le skill **doit afficher** avant de commencer :
 
 ```
-💰 Estimation coût — /tech-lead
+💰 Estimation coût — /call-tech-lead
 ────────────────────────────────
 Scope détecté : <routing phase 1 preview>
 Agents : <liste> (<N> agents)
@@ -596,15 +596,15 @@ En **mode auto** : affiche l'estimation mais continue sans attendre.
 
 ### Optimisations disponibles
 
-Voir `docs/COUTS-LLM.md` pour les 10 optimisations SANS baisse de qualité. Les principales applicables à `/tech-lead` :
+Voir `docs/COUTS-LLM.md` pour les 10 optimisations SANS baisse de qualité. Les principales applicables à `/call-tech-lead` :
 
 1. **Fournir contexte précis** en input (-20-40%)
 2. **Scope agents** explicite ("skip cso, pas de signal sécu") (-15-30%)
-3. **Référencer US/plan existants** (`/tech-lead "implémente PLAN-X.md"`) (-30%)
+3. **Référencer US/plan existants** (`/call-tech-lead "implémente PLAN-X.md"`) (-30%)
 4. **Mode semi** pour features à risque (économise les runs perdus)
-5. **Utiliser `/lead-tech` seul** si US claire et pas besoin de débats (-60-80%)
+5. **Utiliser `/fullstack-lead-tech` seul** si US claire et pas besoin de débats (-60-80%)
 
-**Sur plan Max 20x** : 1 run `/tech-lead` ≈ 5-10% d'une session Opus 5h. Budget confortable : 60-160 runs/semaine.
+**Sur plan Max 20x** : 1 run `/call-tech-lead` ≈ 5-10% d'une session Opus 5h. Budget confortable : 60-160 runs/semaine.
 
 **Quand le jeu en vaut la chandelle** :
 - ✅ Feature complexe (> 1h conception seul)

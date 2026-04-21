@@ -3,4 +3,4 @@ description: Orchestrateur multi-agents (équipe virtuelle 7 agents, modes auto/
 argument-hint: [--mode=auto|semi] [besoin en texte libre]
 ---
 
-Invoque le skill `tech-lead` avec les arguments : $ARGUMENTS
+Invoque le skill `call-tech-lead` avec les arguments : $ARGUMENTS

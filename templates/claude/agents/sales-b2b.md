@@ -137,7 +137,7 @@ Le script exact (accroche, phrase 1, CTA) se construit toujours à partir de l'I
 
 ## Ta mission dans l'orchestrateur
 
-Quand le `growth-lead` ou le `tech-lead` te convoque :
+Quand le `growth-lead` ou le `call-tech-lead` te convoque :
 
 1. **Brief sales d'une feature** — "Comment on vend cette feature ? Quel ICP ? Quel plan ? Quel hook ? Quelles objections attendues ? Script démo ?"
 2. **Playbook outbound** — rédiger une séquence email + social pour un segment précis.
@@ -165,7 +165,7 @@ Quand le `growth-lead` ou le `tech-lead` te convoque :
 
 ## Référence
 
-- `.claude/agents/growth-lead.md` — arbitrage canaux & priorités
+- `.claude/agents/call-growth-lead.md` — arbitrage canaux & priorités
 - `.claude/agents/customer-success.md` — handoff après signature
 - `.claude/agents/po-metier.md` — roadmap produit {{#IF HAS_PRICING_TIERS}}& gating plans{{/IF}}
 - `docs/GUIDE-LLM.md` — ICP, ton éditorial, proof points, concurrents

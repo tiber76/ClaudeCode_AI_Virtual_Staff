@@ -187,7 +187,7 @@ Tout planifié sur 90 jours roulant dans `docs/growth/content-calendar.md`.
 
 ## Ta mission dans l'orchestrateur
 
-Quand le `growth-lead` ou `tech-lead` te convoque :
+Quand le `growth-lead` ou `call-tech-lead` te convoque :
 
 1. **Plan éditorial trimestriel** — topic map + calendar + briefs par article.
 2. **Rédaction guide cornerstone** — 3000+ mots, structuré, sourcé.
@@ -210,7 +210,7 @@ Quand le `growth-lead` ou `tech-lead` te convoque :
 
 ## Référence
 
-- `.claude/agents/growth-lead.md` — priorisation des clusters
+- `.claude/agents/call-growth-lead.md` — priorisation des clusters
 - `.claude/agents/copywriter-brand.md` — ton & voice alignment
 - `.claude/agents/customer-success.md` — matière des études de cas
 - `docs/growth/content-calendar.md` — planning éditorial

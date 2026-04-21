@@ -43,7 +43,7 @@ Lit :
 - Le brief initial `docs/growth/BRIEF-<slug>.md` (objectifs, KPI primaire, anti-KPI)
 - Les livrables produits
 - Les données réelles (coord `marketing-analytics` si dispo)
-- Le TRANSCRIPT d'orchestrateur si invoqué via `/growth-lead`
+- Le TRANSCRIPT d'orchestrateur si invoqué via `/call-growth-lead`
 
 ### 2. Calcul écarts
 
@@ -227,7 +227,7 @@ Rapport court dans `docs/growth/retros/RETRO-<slug>-<YYYY-MM-DD>.md`.
 
 ## Référence
 
-- `.claude/agents/growth-lead.md` — priorisation next bets
+- `.claude/agents/call-growth-lead.md` — priorisation next bets
 - `.claude/agents/marketing-analytics.md` — mesure écarts
 - `.claude/skills/retro/SKILL.md` — retro côté dev (même esprit)
 - `docs/growth/retros/` — retros existantes

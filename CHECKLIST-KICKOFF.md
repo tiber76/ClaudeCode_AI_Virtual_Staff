@@ -29,7 +29,7 @@ Checklist pas à pas pour installer le starter kit sur un projet sans contexte p
   ├── .claude/
   │   ├── agents/           ← 13 fichiers .md
   │   ├── skills/           ← 15 dossiers avec SKILL.md
-  │   ├── commands/         ← 15 fichiers .md (redirections vers skills)
+  │   ├── commands/         ← 16 fichiers .md (un par skill, pour l'autocomplétion /<nom>)
   │   └── settings.local.json
   ├── backlog.md
   └── docs/
@@ -41,8 +41,8 @@ Checklist pas à pas pour installer le starter kit sur un projet sans contexte p
 
 - [ ] Ajoute au `.gitignore` (si pas déjà présent) :
   ```
-  .claude/tech-lead-runs/
-  .claude/growth-lead-runs/
+  .claude/call-call-tech-lead-runs/
+  .claude/call-call-growth-lead-runs/
   ```
 
 ---
@@ -107,14 +107,14 @@ Exemples :
 
 ## Phase 5 — Adaptation des skills (30 min)
 
-Les skills `/tech-lead` et `/growth-lead` contiennent une matrice de routing qui référence les agents. Si tu as supprimé des agents phase 4 :
+Les skills `/call-tech-lead` et `/call-growth-lead` contiennent une matrice de routing qui référence les agents. Si tu as supprimé des agents phase 4 :
 
-- [ ] Ouvre `.claude/skills/tech-lead/SKILL.md` :
+- [ ] Ouvre `.claude/skills/call-tech-lead/SKILL.md` :
   - Dans la section "L'équipe virtuelle", retire les agents que tu as supprimés.
   - Dans la section "Phase 1 — Routing", retire les lignes de la matrice qui font référence à ces agents.
   - Met à jour la section "Répartition Opus/Sonnet".
 
-- [ ] Même chose pour `.claude/skills/growth-lead/SKILL.md`.
+- [ ] Même chose pour `.claude/skills/call-growth-lead/SKILL.md`.
 
 - [ ] Les autres skills (`/redige-us`, `/ship-pr`, etc.) référencent le GUIDE-LLM avec des paragraphes `§X`. Vérifie que les numéros de section correspondent à ton GUIDE-LLM rempli phase 3.
 
@@ -122,14 +122,42 @@ Les skills `/tech-lead` et `/growth-lead` contiennent une matrice de routing qui
 
 ## Phase 6 — Configuration des commandes (5 min)
 
-Les fichiers dans `.claude/commands/*.md` sont des raccourcis qui redirigent vers les skills. Vérifie que chacun existe :
+Les fichiers dans `.claude/commands/*.md` sont des raccourcis qui redirigent vers les skills + apportent **l'autocomplétion `/<nom>` dans Claude Code**. Vérifie que chacun existe :
 
 ```bash
 ls .claude/commands/*.md
-# Doit contenir : tech-lead.md, growth-lead.md, redige-us.md, lead-tech.md,
-# investigate-bug.md, review-pr.md, qa-flow.md, ship-pr.md, security-audit.md,
-# retro.md, redige-brief.md, ship-landing.md, audit-funnel.md, brief-demo.md,
-# retro-campagne.md
+# Doit contenir : setup-project.md, call-tech-lead.md, call-growth-lead.md,
+# redige-us.md, fullstack-lead-tech.md, investigate-bug.md, review-pr.md,
+# qa-flow.md, ship-pr.md, security-audit.md, retro.md, redige-brief.md,
+# ship-landing.md, audit-funnel.md, brief-demo.md, retro-campagne.md
+```
+
+### Comment fonctionne l'autocomplétion Claude Code
+
+Dès qu'un fichier `<nom>.md` est dans `.claude/commands/`, il est pris en compte par Claude Code **sans configuration supplémentaire** :
+
+- Tape `/` dans Claude Code → tu vois la liste de toutes tes commandes avec leur description.
+- Le champ `description` du frontmatter s'affiche à côté du nom.
+- Le champ `argument-hint` s'affiche comme placeholder après sélection pour rappeler la syntaxe.
+
+Règle pratique : **1 skill = 1 commande** pour garantir l'autocomplétion. Si l'autocomplete ne voit pas une commande, vérifie :
+1. Le fichier est bien directement dans `.claude/commands/` (pas dans un sous-dossier).
+2. Le frontmatter YAML est valide (triple tirets ouvrants et fermants).
+3. Tu as ouvert une nouvelle session Claude Code depuis la création du fichier.
+
+### Pour créer une nouvelle commande après le setup
+
+Si tu ajoutes un skill plus tard, n'oublie pas de créer la commande associée :
+
+```bash
+cat > .claude/commands/<nom>.md <<'EOF'
+---
+description: Description courte qui apparaît dans l'autocomplétion
+argument-hint: [arguments attendus]
+---
+
+Invoque le skill `<nom>` avec les arguments : $ARGUMENTS
+EOF
 ```
 
 Si un skill a été supprimé phase 5, supprime sa commande correspondante.
@@ -144,7 +172,7 @@ Lance un petit run pour valider que tout tourne :
 2. Vérifie qu'il charge bien le GUIDE-LLM en début de session (il doit mentionner "Backlog : ... en attente").
 3. Lance :
    ```
-   /tech-lead "Ajoute un bouton 'Exporter CSV' dans la vue X qui déclenche un téléchargement du listing courant" --mode=semi
+   /call-tech-lead "Ajoute un bouton 'Exporter CSV' dans la vue X qui déclenche un téléchargement du listing courant" --mode=semi
    ```
 4. Observe le déroulé :
    - Phase 0 : affichage du coût estimé.
@@ -175,7 +203,7 @@ Lance un petit run pour valider que tout tourne :
 
 - [ ] Le GUIDE-LLM reflète ton projet (plus aucun placeholder `{{...}}` non résolu).
 - [ ] Tous les agents gardés sont remplis (pas de placeholder `{{…}}` oublié).
-- [ ] Un `/tech-lead` de test a produit une PR ouverte sans erreur.
+- [ ] Un `/call-tech-lead` de test a produit une PR ouverte sans erreur.
 - [ ] Un `/retro` de test a proposé un ajout au GUIDE-LLM §12 (même fictif).
 - [ ] `backlog.md` existe avec une entrée fictive pour valider le rappel en début de session.
 

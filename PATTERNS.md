@@ -6,7 +6,7 @@ Ce document explique les patterns invariants du kit, séparés de leur implémen
 
 ## Pattern 1 — Orchestrateur multi-agents (Round 1 → Round 2 → Tranche)
 
-C'est **le** pattern central. Tous les skills orchestrateurs (`/tech-lead`, `/growth-lead`) suivent cette chorégraphie.
+C'est **le** pattern central. Tous les skills orchestrateurs (`/call-tech-lead`, `/call-growth-lead`) suivent cette chorégraphie.
 
 ### Phase 0 — Intake
 - Parse le besoin.
@@ -39,7 +39,7 @@ C'est **le** pattern central. Tous les skills orchestrateurs (`/tech-lead`, `/gr
 
 ### Phase 5 — Plan final
 - Consolide avis + arbitrages en un plan exploitable.
-- Invoque un skill de synthèse (`/lead-tech`, `/ship-landing`) pour produire le livrable structuré.
+- Invoque un skill de synthèse (`/fullstack-lead-tech`, `/ship-landing`) pour produire le livrable structuré.
 - Checkpoint utilisateur (mode semi).
 
 ### Phase 6 — Exécution
@@ -193,11 +193,11 @@ Chaque run orchestré produit un TRANSCRIPT.md **mis à jour incrémentalement**
 
 ## Pattern 5 — Opt-in cross-équipes (pas d'auto-escalade)
 
-L'orchestrateur tech `/tech-lead` et l'orchestrateur growth `/growth-lead` vivent **côte à côte**, ils ne s'appellent pas l'un l'autre sauf accord explicite.
+L'orchestrateur tech `/call-tech-lead` et l'orchestrateur growth `/call-growth-lead` vivent **côte à côte**, ils ne s'appellent pas l'un l'autre sauf accord explicite.
 
 ### Règle stricte
 
-- `/tech-lead` détecte un signal commercial (refonte pricing, différenciateur majeur, nouveau segment).
+- `/call-tech-lead` détecte un signal commercial (refonte pricing, différenciateur majeur, nouveau segment).
 - En **mode semi** → `AskUserQuestion` : "Signal commercial `<X>` détecté. Consulter `<agents growth>` (+~100k tokens) ? Oui/Non." Default = Non.
 - En **mode auto** → JAMAIS d'escalade. Documente dans TRANSCRIPT : "Signal commercial détecté, pas d'escalade (mode auto)."
 
@@ -226,7 +226,7 @@ Dans la Phase 1 de l'orchestrateur, détection :
 
 ```
 Bug trivial / typo / one-liner → 🛑 refuse d'orchestrer, propose direct édition ou /investigate-bug
-Refacto interne simple → propose /lead-tech + impl direct, pas besoin d'équipe
+Refacto interne simple → propose /fullstack-lead-tech + impl direct, pas besoin d'équipe
 Question de doc → répond sans orchestrer
 ```
 
@@ -288,7 +288,7 @@ Un `backlog.md` à la racine, scanné en début de session :
 Chaque skill orchestrateur **annonce son coût estimé AVANT de lancer** :
 
 ```
-💰 Estimation coût — /tech-lead
+💰 Estimation coût — /call-tech-lead
 ────────────────────────────────
 Scope détecté : nouvelle route API + composant UI
 Agents : po-metier + full-stack-lead + designer-uxui + qa (4 agents)
@@ -312,10 +312,10 @@ Continuer ? (y/n)
 ## Anti-patterns connus
 
 ### 1. Orchestrer pour orchestrer
-Si ton besoin est clair et que tu sais ce qu'il faut faire, n'invoque pas `/tech-lead` — `Edit` direct. Orchestration = ~50× plus cher.
+Si ton besoin est clair et que tu sais ce qu'il faut faire, n'invoque pas `/call-tech-lead` — `Edit` direct. Orchestration = ~50× plus cher.
 
 ### 2. Mélanger plusieurs objectifs dans un run
-Un `/tech-lead` = une feature atomique. "Refonte parcours signup + KPI dashboard + alertes Slack" → 3 runs séparés, pas 1.
+Un `/call-tech-lead` = une feature atomique. "Refonte parcours signup + KPI dashboard + alertes Slack" → 3 runs séparés, pas 1.
 
 ### 3. Sauter le round 1
 Tentation de "on sait ce qu'il faut faire, juste produis le plan". Mauvaise idée — 30% du temps, un agent soulève un point que personne n'avait vu.

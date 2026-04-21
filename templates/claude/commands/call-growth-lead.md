@@ -3,4 +3,4 @@ description: Orchestre l'équipe commerciale & marketing (6 agents) pour une ini
 argument-hint: [besoin en texte libre] [--mode=auto|semi]
 ---
 
-Invoque le skill `growth-lead` avec les arguments : $ARGUMENTS
+Invoque le skill `call-growth-lead` avec les arguments : $ARGUMENTS

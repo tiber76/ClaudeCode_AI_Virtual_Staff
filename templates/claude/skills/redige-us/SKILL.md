@@ -26,7 +26,7 @@ Produire une User Story claire, testable et priorisée à partir d'un besoin exp
 
 ## Quand l'utiliser
 - L'utilisateur décrit un besoin sans format précis ("je voudrais que…", "il faudrait pouvoir…").
-- Avant d'appeler `/lead-tech` pour obtenir le plan technique.
+- Avant d'appeler `/fullstack-lead-tech` pour obtenir le plan technique.
 - Avant d'ouvrir un ticket interne ou une issue GitHub.
 
 ## Principes
@@ -104,7 +104,7 @@ En tant que `<persona>`, je veux `<action>` afin de `<bénéfice>`.
 ## Questions ouvertes / hypothèses
 - [ ] <tout ce qui n'a pas été tranché, avec hypothèse par défaut si pertinent>
 
-## Dépendances techniques pressenties (à confirmer par `/lead-tech`)
+## Dépendances techniques pressenties (à confirmer par `/fullstack-lead-tech`)
 - <ex: nouvelle table DB, nouvelle route API, envoi email>
 ```
 
@@ -116,14 +116,14 @@ En tant que `<persona>`, je veux `<action>` afin de `<bénéfice>`.
 
 ### 5. Suite suggérée
 Terminer la réponse par :
-> **Suite suggérée** : `/lead-tech docs/us/US-<slug>.md` pour obtenir le plan technique et UX/UI.
+> **Suite suggérée** : `/fullstack-lead-tech docs/us/US-<slug>.md` pour obtenir le plan technique et UX/UI.
 
 ## Anti-patterns à éviter
 - ❌ Inventer des personae ou rôles qui n'existent pas dans le projet.
 - ❌ Poser plus de 3 questions de clarification en une fois.
 - ❌ Écrire des critères d'acceptation vagues ("ça doit marcher", "c'est rapide").
 - ❌ Mélanger plusieurs objectifs dans une seule US → proposer un découpage.
-- ❌ Décider de la solution technique dans l'US (c'est le job de `/lead-tech`).
+- ❌ Décider de la solution technique dans l'US (c'est le job de `/fullstack-lead-tech`).
 
 ## Référence GUIDE-LLM
 - Rôles projet : `{{ROLES_ENUM}}` (cf. architecture du projet)

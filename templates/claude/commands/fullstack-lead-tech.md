@@ -3,4 +3,4 @@ description: Produit un plan technique global à partir d'une US (docs/plans/PLA
 argument-hint: [chemin US ou texte collé]
 ---
 
-Invoque le skill `lead-tech` avec les arguments : $ARGUMENTS
+Invoque le skill `fullstack-lead-tech` avec les arguments : $ARGUMENTS

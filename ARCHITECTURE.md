@@ -21,7 +21,7 @@ racine-projet/
 │   │
 │   ├── settings.local.json               ← permissions, env vars, hooks (non versionné idéalement)
 │   │
-│   ├── tech-lead-runs/                   ← artefacts produits par /tech-lead (inclure dans .gitignore)
+│   ├── call-tech-lead-runs/                   ← artefacts produits par /call-tech-lead (inclure dans .gitignore)
 │   │   └── YYYYMMDD-HHMMSS-<slug>/
 │   │       ├── 00-input.md
 │   │       ├── 01-routing.md
@@ -35,7 +35,7 @@ racine-projet/
 │   │       ├── 09-pr.md
 │   │       └── TRANSCRIPT.md             ← synthèse lisible de tout le run
 │   │
-│   └── growth-lead-runs/                 ← même logique pour growth
+│   └── call-growth-lead-runs/                 ← même logique pour growth
 │
 ├── backlog.md                            ← lu en début de session (rappel dettes)
 │
@@ -47,7 +47,7 @@ racine-projet/
     ├── us/                               ← User Stories produites par /redige-us
     │   └── US-<slug>.md
     │
-    ├── plans/                            ← Plans techniques produits par /lead-tech
+    ├── plans/                            ← Plans techniques produits par /fullstack-lead-tech
     │   └── PLAN-<slug>.md
     │
     └── growth/                           ← livrables équipe commerciale
@@ -93,7 +93,7 @@ les pièges connus, le style, les anti-patterns, les références.
 
 **Comment c'est invoqué** :
 - Par l'utilisateur : `Demande à l'agent full-stack-lead de…`
-- Par un skill (via le tool `Agent`) : l'orchestrateur `/tech-lead` invoque `Agent(subagent_type: "full-stack-lead", prompt: "...")` en Phase 3.
+- Par un skill (via le tool `Agent`) : l'orchestrateur `/call-tech-lead` invoque `Agent(subagent_type: "full-stack-lead", prompt: "...")` en Phase 3.
 - Parallélisation : plusieurs `Agent` tool calls dans le même message = invocations parallèles (gain de latence énorme sur le round 1).
 
 ### 2. `.claude/skills/<nom>/SKILL.md`
@@ -124,7 +124,7 @@ format de sortie, anti-patterns, références.
 
 **Comment c'est invoqué** :
 - Par l'utilisateur : `/nom-skill <arguments>` OU via l'outil `Skill` depuis une autre conversation.
-- Par un autre skill : un skill orchestrateur peut invoquer d'autres skills via appel séquentiel (pas d'imbrication formelle, mais `/tech-lead` appelle `/redige-us`, `/lead-tech`, `/review-pr`, `/qa-flow`, `/ship-pr` en sous-routines logiques).
+- Par un autre skill : un skill orchestrateur peut invoquer d'autres skills via appel séquentiel (pas d'imbrication formelle, mais `/call-tech-lead` appelle `/redige-us`, `/fullstack-lead-tech`, `/review-pr`, `/qa-flow`, `/ship-pr` en sous-routines logiques).
 
 ### 3. `.claude/commands/<nom>.md`
 
@@ -140,6 +140,21 @@ Invoque le skill `nom-skill` avec les arguments : $ARGUMENTS
 ```
 
 Claude Code interprète cette commande comme une instruction d'invoquer le skill correspondant. `$ARGUMENTS` contient tout ce que l'utilisateur a tapé après `/nom`.
+
+#### Autocomplétion automatique
+
+Dès qu'un fichier `<nom>.md` existe dans `.claude/commands/`, Claude Code l'intègre automatiquement dans l'autocomplétion :
+
+- **Taper `/` dans Claude Code** affiche la liste déroulante de toutes les commandes disponibles.
+- **Le champ `description`** du frontmatter apparaît à côté du nom dans la liste.
+- **Le champ `argument-hint`** apparaît comme placeholder après la commande sélectionnée pour rappeler la syntaxe attendue.
+- **Aucune configuration supplémentaire** : pas besoin de déclarer les commandes ailleurs. Claude Code scanne le dossier à chaque session.
+
+Règle pratique : **1 skill = 1 commande** pour garantir l'autocomplétion. Si tu crées un nouveau skill et oublies la commande, tu pourras toujours l'invoquer via le tool `Skill`, mais tu perdras le gain `/nom` + autocomplete.
+
+Pour tester après modification :
+1. Le fichier est pris en compte à la prochaine session Claude Code (pas besoin de redémarrer).
+2. Si l'autocomplete ne voit pas ta commande : vérifie que le fichier est bien dans `.claude/commands/` (pas dans un sous-dossier) et qu'il a un frontmatter YAML valide.
 
 ### 4. `.claude/settings.local.json`
 
@@ -203,15 +218,15 @@ Fichier à la racine, **scanné en début de session**. Format simple :
 
 ---
 
-## Flux d'une feature via `/tech-lead`
+## Flux d'une feature via `/call-tech-lead`
 
 Pour comprendre où chaque fichier est lu/écrit pendant un run orchestré :
 
 ```
-Utilisateur : /tech-lead "Ajoute export CSV candidats" --mode=semi
+Utilisateur : /call-tech-lead "Ajoute export CSV candidats" --mode=semi
 
 ├── Phase 0 — Setup
-│   ├── Crée .claude/tech-lead-runs/YYYYMMDD-HHMMSS-export-csv-candidats/
+│   ├── Crée .claude/call-call-tech-lead-runs/YYYYMMDD-HHMMSS-export-csv-candidats/
 │   ├── Écrit 00-input.md
 │   ├── Crée branche feature/export-csv-candidats
 │   └── Lit docs/GUIDE-LLM.md + backlog.md
@@ -240,7 +255,7 @@ Utilisateur : /tech-lead "Ajoute export CSV candidats" --mode=semi
 │   └── Orchestrateur tranche (décision motivée dans TRANSCRIPT)
 │
 ├── Phase 5 — Plan final
-│   ├── Invoque le skill /lead-tech en sous-routine
+│   ├── Invoque le skill /fullstack-lead-tech en sous-routine
 │   ├── Écrit docs/plans/PLAN-export-csv-candidats.md
 │   └── CHECKPOINT (mode semi) : "Valide le plan ? (oui/ajuste/stop)"
 │
@@ -273,7 +288,7 @@ Où intervenir si tu veux personnaliser :
 | Ajouter un nouvel expert | Créer `.claude/agents/<nom>.md` + ajouter à la matrice de routing dans `tech-lead/SKILL.md` ou `growth-lead/SKILL.md` |
 | Ajouter un nouveau skill | Créer `.claude/skills/<nom>/SKILL.md` + `.claude/commands/<nom>.md` |
 | Changer le modèle d'un agent | Modifier `model:` dans le frontmatter de l'agent |
-| Ajouter un checkpoint dans `/tech-lead` | Éditer la phase concernée dans `.claude/skills/tech-lead/SKILL.md` |
+| Ajouter un checkpoint dans `/call-tech-lead` | Éditer la phase concernée dans `.claude/skills/call-tech-lead/SKILL.md` |
 | Changer les types de tests demandés | Éditer `.claude/agents/qa.md` (section "Méthode — tableau de couverture") |
 | Changer la règle de merge | Éditer `docs/GUIDE-LLM.md` §0 |
 | Ajouter un piège détecté | Éditer `docs/GUIDE-LLM.md` §12 (via `/retro` idéalement) |
@@ -295,4 +310,4 @@ Au-delà de ~800 lignes, certains clients Claude tronquent. Archive les sections
 13 agents c'est déjà beaucoup. Si ton projet n'en a pas besoin, supprime-les. Un orchestrateur avec 3 agents bien ciblés vaut mieux que 13 flous.
 
 ### 5. Runs orchestrés commités
-`tech-lead-runs/` et `growth-lead-runs/` doivent être dans `.gitignore`. Sinon ton historique git explose et les TRANSCRIPT.md fuitent des brainstorms internes.
+`call-tech-lead-runs/` et `call-growth-lead-runs/` doivent être dans `.gitignore`. Sinon ton historique git explose et les TRANSCRIPT.md fuitent des brainstorms internes.

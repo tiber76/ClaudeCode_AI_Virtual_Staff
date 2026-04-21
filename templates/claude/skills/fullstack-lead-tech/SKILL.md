@@ -1,5 +1,5 @@
 ---
-name: lead-tech
+name: fullstack-lead-tech
 description: |
   À partir d'une User Story (fichier `docs/us/US-*.md` ou texte collé), produit un plan
   technique global avec une section UX/UI soignée obligatoire : impact architectural
@@ -23,7 +23,7 @@ triggers:
   - plan tech UX
 ---
 
-# /lead-tech
+# /fullstack-lead-tech
 
 ## Objectif
 Produire un plan technique complet **avec un soin UX/UI obligatoire** à partir d'une US. Livrable unique : un fichier `docs/plans/PLAN-<slug>.md`. **Aucun code n'est produit par ce skill.**

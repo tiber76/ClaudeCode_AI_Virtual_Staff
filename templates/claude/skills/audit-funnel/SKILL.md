@@ -258,7 +258,7 @@ Tracking plan à construire (coord `data-engineer` + `full-stack-lead`) : <lien 
 
 - `.claude/agents/marketing-analytics.md` — méthode complète
 - `.claude/agents/data-engineer.md` — construction dashboard
-- `.claude/agents/growth-lead.md` — priorisation stratégique
+- `.claude/agents/call-growth-lead.md` — priorisation stratégique
 - `docs/growth/audits/` — audits existants
 
 ## 💰 Coût indicatif

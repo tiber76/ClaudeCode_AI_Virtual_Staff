@@ -13,8 +13,8 @@ Un kit portable pour installer sur **n'importe quel projet** un système d'équi
    - Équipe growth (6 agents) : Growth Lead, Sales B2B, Customer Success, Copywriter & Brand, Content & SEO, Marketing Analytics
 
 2. **15 skills** (.claude/skills/) qui orchestrent ces agents ou livrent un artefact précis :
-   - Orchestrateurs : `/tech-lead`, `/growth-lead`
-   - Pré-PR tech : `/redige-us`, `/lead-tech`, `/investigate-bug`, `/review-pr`, `/qa-flow`, `/ship-pr`, `/security-audit`
+   - Orchestrateurs : `/call-tech-lead`, `/call-growth-lead`
+   - Pré-PR tech : `/redige-us`, `/fullstack-lead-tech`, `/investigate-bug`, `/review-pr`, `/qa-flow`, `/ship-pr`, `/security-audit`
    - Post-livraison : `/retro`, `/retro-campagne`
    - Growth : `/redige-brief`, `/ship-landing`, `/audit-funnel`, `/brief-demo`
 
@@ -33,7 +33,7 @@ Un kit portable pour installer sur **n'importe quel projet** un système d'équi
 Les 5 principes non-négociables qui font que le système tient :
 
 ### 1. Un orchestrateur ≠ un agent
-Les skills `/tech-lead` et `/growth-lead` **convoquent dynamiquement** des agents spécialisés, les font débattre, puis tranchent. L'orchestrateur n'est jamais un agent lui-même.
+Les skills `/call-tech-lead` et `/call-growth-lead` **convoquent dynamiquement** des agents spécialisés, les font débattre, puis tranchent. L'orchestrateur n'est jamais un agent lui-même.
 
 ### 2. Round 1 (avis indépendants) → Round 2 (débats croisés) → arbitrage
 Pattern rigoureux pour éviter l'écho de groupe : chaque agent donne son avis sans voir celui des autres, puis on force les confrontations sur les points de friction, puis l'orchestrateur tranche avec justification.
@@ -72,7 +72,7 @@ Lis dans cet ordre :
 
 1. Copie le contenu du dossier `templates/` à la racine de ton nouveau projet (voir [CHECKLIST-KICKOFF.md](CHECKLIST-KICKOFF.md) pour la procédure exacte).
 2. Lance `/setup-project` dans Claude Code : questionnaire de ~30 questions, le skill remplit automatiquement tous les placeholders.
-3. Lance une première feature via `/tech-lead "..."` en mode `--mode=semi` pour valider que l'orchestrateur tourne.
+3. Lance une première feature via `/call-tech-lead "..."` en mode `--mode=semi` pour valider que l'orchestrateur tourne.
 4. Affine les agents au fur et à mesure — la première version n'est jamais parfaite (voir [GUIDE-ADAPTATION.md](GUIDE-ADAPTATION.md)).
 
 Workflow détaillé dans [CHECKLIST-KICKOFF.md](CHECKLIST-KICKOFF.md).

@@ -263,7 +263,7 @@ Tableau type (placeholder chiffres tant que pas de data) :
 
 ## Ta mission dans l'orchestrateur
 
-Quand le `growth-lead` ou `tech-lead` te convoque :
+Quand le `growth-lead` ou `call-tech-lead` te convoque :
 
 1. **Audit funnel** (skill `/audit-funnel`) — analyse des 5 étapes, identifier 3 fuites prioritaires, proposer 3 fixes testables.
 2. **Cadre d'A/B test** — hypothèse, métrique, sample size, durée, critères de décision.
@@ -293,7 +293,7 @@ Quand le `growth-lead` ou `tech-lead` te convoque :
 
 ## Référence
 
-- `.claude/agents/growth-lead.md` — priorisation canaux
+- `.claude/agents/call-growth-lead.md` — priorisation canaux
 - `.claude/agents/data-engineer.md` — construction des dashboards
 - `.claude/agents/full-stack-lead.md` — instrumentation events
 - `docs/growth/audits/` — audits funnel livrés

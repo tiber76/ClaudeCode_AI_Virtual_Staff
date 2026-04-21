@@ -6,7 +6,7 @@ Deux équipes d'agents IA spécialisés collaborent sur {{PROJECT_NAME}}, chacun
 
 ## 🏗️ Équipe Tech
 
-**Orchestrateur** : `/tech-lead`
+**Orchestrateur** : `/call-tech-lead`
 **Mission** : concevoir, coder, tester, reviewer une feature jusqu'à une PR ouverte vers `develop`.
 **Jamais** : merger la PR, commit sur `main`/`develop`, exécuter une migration SQL.
 
@@ -26,9 +26,9 @@ Deux équipes d'agents IA spécialisés collaborent sur {{PROJECT_NAME}}, chacun
 
 | Commande | Objectif | Sortie |
 |---|---|---|
-| **`/tech-lead <besoin>`** | Orchestrer feature avec équipe virtuelle, débats, arbitrages | TRANSCRIPT + PR ouverte `develop` |
+| **`/call-tech-lead <besoin>`** | Orchestrer feature avec équipe virtuelle, débats, arbitrages | TRANSCRIPT + PR ouverte `develop` |
 | `/redige-us <besoin>` | Transformer besoin en User Story Gherkin | `docs/us/US-<slug>.md` |
-| `/lead-tech <US>` | Plan technique (archi, UX, sécu, tests, effort) | `docs/plans/PLAN-<slug>.md` |
+| `/fullstack-lead-tech <US>` | Plan technique (archi, UX, sécu, tests, effort) | `docs/plans/PLAN-<slug>.md` |
 | `/investigate-bug <bug>` | Root-cause analysis + 2 fixes (pas de patch direct) | Rapport hypothèses vérifiées |
 | `/qa-flow` | Pyramide tests (smoke → critical → full) + correctif itératif | Rapport before/after |
 | `/review-pr` | Code review pré-merge | 🔴 Bloquants / 🟠 À corriger / 🟢 OK |
@@ -40,7 +40,7 @@ Deux équipes d'agents IA spécialisés collaborent sur {{PROJECT_NAME}}, chacun
 
 ## 📣 Équipe Commerciale & Marketing (si applicable)
 
-**Orchestrateur** : `/growth-lead`
+**Orchestrateur** : `/call-growth-lead`
 **Mission** : concevoir, rédiger, orchestrer les initiatives go-to-market — campagnes, landings, séquences outbound, audits funnel, plans éditoriaux.
 **Jamais** : publier, envoyer un email réel, créer un compte externe, fabriquer un chiffre.
 
@@ -59,7 +59,7 @@ Deux équipes d'agents IA spécialisés collaborent sur {{PROJECT_NAME}}, chacun
 
 | Commande | Objectif | Sortie |
 |---|---|---|
-| **`/growth-lead <besoin>`** | Orchestrer initiative growth, débats, livrables | TRANSCRIPT + `docs/growth/` |
+| **`/call-growth-lead <besoin>`** | Orchestrer initiative growth, débats, livrables | TRANSCRIPT + `docs/growth/` |
 | `/redige-brief <besoin>` | Formaliser besoin en brief SMART | `docs/growth/BRIEF-<slug>.md` |
 | `/ship-landing <besoin>` | Livrer landing page complète | `docs/growth/landings/<slug>.md` |
 | `/audit-funnel` | Diagnostiquer funnel AARRR + 3 fuites + 3 fixes | `docs/growth/audits/FUNNEL-<date>.md` |
@@ -73,14 +73,14 @@ Deux équipes d'agents IA spécialisés collaborent sur {{PROJECT_NAME}}, chacun
 **Règle absolue** : aucune escalade automatique.
 
 ### Cas 1 — Feature tech qui touche le pricing
-→ `/tech-lead <besoin>`
+→ `/call-tech-lead <besoin>`
 → Le skill détecte le signal commercial et **propose** : "Consulter growth-lead + sales-b2b (+~100k tokens) ? Oui/Non"
 → **Par défaut : Non**. Opt-in explicite requis.
 
 ### Cas 2 — Initiative commerciale qui nécessite un dev
-→ `/growth-lead <besoin>`
+→ `/call-growth-lead <besoin>`
 → Les livrables contiennent un "handoff implémentation" à destination de `full-stack-lead`
-→ Invoquer ensuite `/tech-lead` pour implémenter.
+→ Invoquer ensuite `/call-tech-lead` pour implémenter.
 
 ### Cas 3 — Question simple
 → Pas d'orchestrateur. Invoquer directement l'agent.
@@ -93,8 +93,8 @@ Détail : [`docs/COUTS-LLM.md`](COUTS-LLM.md).
 
 | Run | Tokens brut | Avec cache | API |
 |---|---|---|---|
-| `/tech-lead` (feature complète) | 600k-1.4M | 150-350k | **$2-5** |
-| `/growth-lead` (initiative) | 300-800k | 80-230k | **$1-4** |
+| `/call-tech-lead` (feature complète) | 600k-1.4M | 150-350k | **$2-5** |
+| `/call-growth-lead` (initiative) | 300-800k | 80-230k | **$1-4** |
 | Skill utilitaire solo | 80-200k | 30-60k | $0.4-1 |
 | Skill léger (`/redige-us`, `/retro`) | 30-80k | 10-25k | $0.1-0.3 |
 | Agent solo | 20-50k | 10-20k | $0.05-0.5 |
@@ -106,8 +106,8 @@ Détail : [`docs/COUTS-LLM.md`](COUTS-LLM.md).
 | Besoin | Commande |
 |---|---|
 | Formaliser une US | `/redige-us` |
-| Plan technique d'une US | `/lead-tech` |
-| Feature complète → PR | `/tech-lead` |
+| Plan technique d'une US | `/fullstack-lead-tech` |
+| Feature complète → PR | `/call-tech-lead` |
 | Debug méthodique | `/investigate-bug` |
 | Tests à corriger | `/qa-flow` |
 | Review pré-merge | `/review-pr` |
@@ -116,7 +116,7 @@ Détail : [`docs/COUTS-LLM.md`](COUTS-LLM.md).
 | Rétro post-feature | `/retro` |
 | --- | --- |
 | Brief campagne | `/redige-brief` |
-| Initiative growth | `/growth-lead` |
+| Initiative growth | `/call-growth-lead` |
 | Landing page | `/ship-landing` |
 | Audit funnel | `/audit-funnel` |
 | Préparer démo | `/brief-demo` |
@@ -135,7 +135,7 @@ Détail : [`docs/COUTS-LLM.md`](COUTS-LLM.md).
 
 docs/
 ├── us/               ← User Stories (/redige-us)
-├── plans/            ← Plans techniques (/lead-tech)
+├── plans/            ← Plans techniques (/fullstack-lead-tech)
 ├── GUIDE-LLM.md      ← source de vérité projet
 ├── EQUIPES-LLM.md    ← ce fichier
 ├── COUTS-LLM.md      ← estimations tokens

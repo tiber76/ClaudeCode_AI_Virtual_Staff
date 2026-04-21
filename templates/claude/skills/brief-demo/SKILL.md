@@ -291,7 +291,7 @@ Dossier `docs/growth/demos/<prospect-slug>.md`.
 
 - `.claude/agents/sales-b2b.md` — méthodo MEDDPICC, objections types
 - `.claude/agents/customer-success.md` — handoff post-signature
-- `.claude/agents/growth-lead.md` — positionnement
+- `.claude/agents/call-growth-lead.md` — positionnement
 - `docs/growth/demos/` — briefs existants
 
 ## 💰 Coût indicatif

@@ -175,8 +175,8 @@ rm .claude/agents/<nom>.md
 ```
 
 Et supprimer les références à cet agent dans :
-- `.claude/skills/tech-lead/SKILL.md` (matrice de routing)
-- `.claude/skills/growth-lead/SKILL.md` (matrice de routing)
+- `.claude/skills/call-tech-lead/SKILL.md` (matrice de routing)
+- `.claude/skills/call-growth-lead/SKILL.md` (matrice de routing)
 - `docs/EQUIPES-LLM.md`
 
 ### Étape 5 — Vérification finale

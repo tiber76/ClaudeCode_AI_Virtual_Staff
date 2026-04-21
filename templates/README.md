@@ -18,7 +18,7 @@ templates/
 │   │   ├── _TEMPLATE-skill.md           ← squelette vierge avec placeholders
 │   │   ├── setup-project/SKILL.md       ← questionnaire qui remplit tous les placeholders
 │   │   └── <nom>/SKILL.md               ← les 15 autres skills génériques
-│   └── commands/                        ← 15 alias /<nom> pour les skills
+│   └── commands/                        ← 16 alias /<nom> (un par skill, autocomplétion Claude Code)
 │       └── <nom>.md
 │
 └── docs/                                ← à copier en docs/ à la racine
@@ -132,8 +132,8 @@ mv docs/COUTS-LLM.template.md docs/COUTS-LLM.md
 
 # 3. Ignorer les runs + settings local
 cat >> .gitignore <<EOF
-.claude/tech-lead-runs/
-.claude/growth-lead-runs/
+.claude/call-call-tech-lead-runs/
+.claude/call-call-growth-lead-runs/
 .claude/settings.local.json
 EOF
 

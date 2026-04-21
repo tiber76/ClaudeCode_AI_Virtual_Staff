@@ -171,7 +171,7 @@ Pour chaque client à fort ROI démontrable, produire une étude de cas (co-déc
 
 ## Ta mission dans l'orchestrateur
 
-Quand le `growth-lead` ou `tech-lead` te convoque :
+Quand le `growth-lead` ou `call-tech-lead` te convoque :
 
 1. **Parcours onboarding d'une nouvelle feature** — "Cette feature nécessite quoi dans l'onboarding ? Quelle étape, quelle ressource, quel email ?"
 2. **Prévention churn** — audit d'un compte à risque, plan de sauvetage.
@@ -204,7 +204,7 @@ Quand le `growth-lead` ou `tech-lead` te convoque :
 {{#IF IS_B2B}}
 - `.claude/agents/sales-b2b.md` — handoff post-signature
 {{/IF}}
-- `.claude/agents/growth-lead.md` — stratégie expansion
+- `.claude/agents/call-growth-lead.md` — stratégie expansion
 - `.claude/agents/po-metier.md` — roadmap & feedback terrain
 - `docs/GUIDE-LLM.md` — ton éditorial, rituels produit, proof points
 - `{{ENTITIES_LIST}}` — entités produit principales

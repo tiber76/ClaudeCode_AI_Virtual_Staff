@@ -56,7 +56,7 @@ Format standardisé (voir template ci-dessous), sauvegardé dans `docs/growth/BR
 ### 4. Affiche au user
 
 Affiche le brief dans le chat + chemin du fichier. Propose :
-> "Brief prêt. Tu peux l'exécuter avec `/growth-lead <même besoin>` pour orchestrer l'équipe, ou partir directement vers un skill ciblé (`/ship-landing`, `/audit-funnel`…)."
+> "Brief prêt. Tu peux l'exécuter avec `/call-growth-lead <même besoin>` pour orchestrer l'équipe, ou partir directement vers un skill ciblé (`/ship-landing`, `/audit-funnel`…)."
 
 ## Template brief standard
 
@@ -204,7 +204,7 @@ S+13 : Retro (via /retro-campagne)
 
 ## Référence
 
-- `.claude/agents/growth-lead.md` — arbitrage stratégique
+- `.claude/agents/call-growth-lead.md` — arbitrage stratégique
 - `docs/growth/BRIEF-*.md` — briefs existants
 
 ## 💰 Coût indicatif

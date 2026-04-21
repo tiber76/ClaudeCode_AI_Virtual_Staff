@@ -10,7 +10,7 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/). Versionning [S
 
 ### Added
 - 13 agents portables (équipe tech + équipe growth) avec placeholders et blocs conditionnels.
-- 16 skills (2 orchestrateurs `/tech-lead` et `/growth-lead`, 7 skills tech, 5 skills growth, `/retro`, `/setup-project`).
+- 16 skills (2 orchestrateurs `/call-tech-lead` et `/call-growth-lead`, 7 skills tech, 5 skills growth, `/retro`, `/setup-project`).
 - Squelette `docs/GUIDE-LLM.template.md` avec 12 sections à remplir.
 - Squelette `docs/EQUIPES-LLM.template.md` et `docs/COUTS-LLM.template.md`.
 - 4 formats de livrables (`US`, `PLAN`, `BRIEF`, `RETRO`).
