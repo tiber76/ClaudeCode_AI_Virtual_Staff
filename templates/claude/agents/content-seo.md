@@ -210,7 +210,7 @@ Quand le `growth-lead` ou `call-tech-lead` te convoque :
 
 ## Référence
 
-- `.claude/agents/call-growth-lead.md` — priorisation des clusters
+- `.claude/skills/call-growth-lead/SKILL.md` — priorisation des clusters
 - `.claude/agents/copywriter-brand.md` — ton & voice alignment
 - `.claude/agents/customer-success.md` — matière des études de cas
 - `docs/growth/content-calendar.md` — planning éditorial

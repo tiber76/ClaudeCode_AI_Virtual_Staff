@@ -6,6 +6,47 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/). Versionning [S
 
 ---
 
+## [0.3.0] — 2026-04-28
+
+### Added
+- Adapter **OpenAI Codex** complet dans `templates/codex/` :
+  - 16 skills Codex dans `.agents/skills/`.
+  - 13 agents Codex en TOML dans `.codex/agents/`.
+  - `AGENTS.md` pour les règles transverses Codex.
+- Générateur `scripts/generate-codex-templates.mjs` pour produire l'adapter Codex depuis les sources Claude.
+- Validateur `scripts/validate-templates.mjs` pour contrôler les comptages, frontmatter, modèles et reliquats provider.
+- Installateur `npm run setup` via `scripts/install.mjs` :
+  - choix du projet cible ;
+  - provider `codex`, `claude` ou `both` ;
+  - stratégie de conflit `backup`, `abort` ou `overwrite` ;
+  - génération de `virtual-staff-install-report.md` et `virtual-staff-ai-setup.md`.
+- Documentation de portage `PORTAGE-CODEX.md`.
+- Guide `OPTIMISATION-TOKENS.md` pour routing, depth, modèles et sobriété tokens.
+
+### Changed
+- README réorganisé autour d'un seul chemin recommandé : `npm run setup` puis `/setup-project --ai` ou `$setup-project --ai`.
+- `setup-project` passe en mode **AI-assisted** par défaut : inspection du repo, inférence de la stack, questions limitées aux informations bloquantes.
+- Les orchestrateurs `call-tech-lead` et `call-growth-lead` acceptent maintenant `--depth=lean|standard|full`.
+- Le round 2 devient facultatif : aucun agent n'est relancé s'il n'y a pas de friction actionnable.
+- Routing plus sobre : plafonds d'agents selon `depth` et documentation des agents exclus.
+- Documentation équilibrée des modèles Claude et Codex :
+  - Claude : familles `Opus` / `Sonnet`.
+  - Codex : `gpt-5.3-codex`, `gpt-5.4-mini`, `gpt-5.5` avec effort adapté au rôle.
+- `docs/COUTS-LLM.template.md` devient provider-agnostic et documente les profils de profondeur.
+
+### Documentation
+- Ajout d'un disclaimer tokens : les runs multi-agents peuvent consommer vite, surtout avec les gros modèles et `--depth=full`.
+- Recommandation explicite d'utiliser `retro` après les runs importants pour améliorer le routing, réduire les prompts et capitaliser dans `docs/GUIDE-LLM.md`.
+- Mention de **Claude Code Usage Monitor** (`monitor-ccu`) pour monitorer gratuitement les sessions, modèles, sous-agents, tokens et coûts Claude Code : https://github.com/tiber76/monitor-ccu.
+- Note Claude Code : rouvrir Claude Code si les slash commands nouvellement copiées n'apparaissent pas.
+
+### Fixed
+- Correction de références croisées vers `call-growth-lead` qui pointaient vers un agent au lieu du skill.
+- Correction des chemins générés Codex (`.codex/runs/<skill>/`, `.agents/skills/<skill>/SKILL.md`, agents `.toml`).
+- Mise à jour des comptages `15 skills` vers `16 skills`.
+
+---
+
 ## [0.2.0] — 2026-04-21
 
 ### Changed (breaking)

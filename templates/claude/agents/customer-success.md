@@ -204,7 +204,7 @@ Quand le `growth-lead` ou `call-tech-lead` te convoque :
 {{#IF IS_B2B}}
 - `.claude/agents/sales-b2b.md` — handoff post-signature
 {{/IF}}
-- `.claude/agents/call-growth-lead.md` — stratégie expansion
+- `.claude/skills/call-growth-lead/SKILL.md` — stratégie expansion
 - `.claude/agents/po-metier.md` — roadmap & feedback terrain
 - `docs/GUIDE-LLM.md` — ton éditorial, rituels produit, proof points
 - `{{ENTITIES_LIST}}` — entités produit principales

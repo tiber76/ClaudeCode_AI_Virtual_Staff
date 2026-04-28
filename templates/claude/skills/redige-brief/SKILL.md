@@ -204,7 +204,7 @@ S+13 : Retro (via /retro-campagne)
 
 ## Référence
 
-- `.claude/agents/call-growth-lead.md` — arbitrage stratégique
+- `.claude/skills/call-growth-lead/SKILL.md` — arbitrage stratégique
 - `docs/growth/BRIEF-*.md` — briefs existants
 
 ## 💰 Coût indicatif

@@ -21,7 +21,7 @@ racine-projet/
 │   │
 │   ├── settings.local.json               ← permissions, env vars, hooks (non versionné idéalement)
 │   │
-│   ├── call-tech-lead-runs/                   ← artefacts produits par /call-tech-lead (inclure dans .gitignore)
+│   ├── call-call-tech-lead-runs/              ← artefacts produits par /call-tech-lead (inclure dans .gitignore)
 │   │   └── YYYYMMDD-HHMMSS-<slug>/
 │   │       ├── 00-input.md
 │   │       ├── 01-routing.md
@@ -35,7 +35,7 @@ racine-projet/
 │   │       ├── 09-pr.md
 │   │       └── TRANSCRIPT.md             ← synthèse lisible de tout le run
 │   │
-│   └── call-growth-lead-runs/                 ← même logique pour growth
+│   └── call-call-growth-lead-runs/            ← même logique pour growth
 │
 ├── backlog.md                            ← lu en début de session (rappel dettes)
 │
@@ -310,4 +310,4 @@ Au-delà de ~800 lignes, certains clients Claude tronquent. Archive les sections
 13 agents c'est déjà beaucoup. Si ton projet n'en a pas besoin, supprime-les. Un orchestrateur avec 3 agents bien ciblés vaut mieux que 13 flous.
 
 ### 5. Runs orchestrés commités
-`call-tech-lead-runs/` et `call-growth-lead-runs/` doivent être dans `.gitignore`. Sinon ton historique git explose et les TRANSCRIPT.md fuitent des brainstorms internes.
+`call-call-tech-lead-runs/` et `call-call-growth-lead-runs/` doivent être dans `.gitignore`. Sinon ton historique git explose et les TRANSCRIPT.md fuitent des brainstorms internes.

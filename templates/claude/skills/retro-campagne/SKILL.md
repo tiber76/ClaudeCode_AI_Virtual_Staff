@@ -227,7 +227,7 @@ Rapport court dans `docs/growth/retros/RETRO-<slug>-<YYYY-MM-DD>.md`.
 
 ## Référence
 
-- `.claude/agents/call-growth-lead.md` — priorisation next bets
+- `.claude/skills/call-growth-lead/SKILL.md` — priorisation next bets
 - `.claude/agents/marketing-analytics.md` — mesure écarts
 - `.claude/skills/retro/SKILL.md` — retro côté dev (même esprit)
 - `docs/growth/retros/` — retros existantes

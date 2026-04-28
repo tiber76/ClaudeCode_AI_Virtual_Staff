@@ -1,111 +1,128 @@
-# Coûts LLM — Estimations & optimisations {{PROJECT_NAME}}
+# Couts LLM — Estimations & optimisations {{PROJECT_NAME}}
 
-Estimations des coûts d'usage des skills et agents, par run. À actualiser avec les vrais chiffres observés sur ton plan.
-
----
-
-## Prérequis — tarification Anthropic (référence)
-
-| Modèle | Input / 1M tokens | Cached input (90% discount) / 1M | Output / 1M tokens |
-|---|---|---|---|
-| Claude Opus | $15 | $1.50 | $75 |
-| Claude Sonnet | $3 | $0.30 | $15 |
-| Claude Haiku | $1 | $0.10 | $5 |
-
-**Prompt caching** : après le premier appel qui écrit le cache (coût +25% sur le chunk caché), les appels suivants dans les 5 min lisent à 10% du prix normal.
+Estimations par run pour les skills et agents. Les montants doivent etre actualises avec les prix reels de ton fournisseur et les chiffres observes dans tes transcripts.
 
 ---
 
-## Estimations par skill (run moyen)
+## Disclaimer
 
-| Skill | Tokens brut | Avec cache 90% | Équivalent API | % session Opus 5h (Max 20x) |
+Les tokens peuvent partir vite avec une equipe virtuelle, en particulier sur les gros modeles, les contextes longs et les runs `--depth=full`. Ces estimations ne sont pas une garantie de cout : surveille la console fournisseur et garde les premiers runs en `--depth=lean` ou `standard`.
+
+Le systeme doit etre ajuste au fil du projet. Apres les runs importants, lance `/retro` ou `$retro` pour identifier les agents vraiment utiles, reduire les prompts trop longs, mettre a jour le routing et documenter les bonnes pratiques dans `docs/GUIDE-LLM.md`.
+
+Si tu utilises Claude Code, tu peux ajouter le monitoring local gratuit **Claude Code Usage Monitor** : https://github.com/tiber76/monitor-ccu. Il lit `~/.claude/projects/` et affiche les couts/tokens par session, les modeles et les sous-agents sans API key ni service externe.
+
+---
+
+## Prerequis — prix a actualiser
+
+Ce fichier ne doit pas figer une grille tarifaire : Anthropic, OpenAI et les plans equipes changent. La bonne pratique est de remplir cette section avec :
+
+| Fournisseur | Modele premium | Modele standard | Modele economique | Source tarifaire |
 |---|---|---|---|---|
-| `/call-tech-lead` (feature complète, 6 agents) | 600k-1.4M | 150-350k | **$2-5** | 5-10% |
-| `/call-tech-lead` (refacto simple) | 200-400k | 50-100k | $0.7-1.5 | 2-3% |
-| `/call-growth-lead` (initiative 6 agents) | 300-800k | 80-230k | **$1-4** | 3-8% |
-| `/audit-funnel`, `/ship-landing` (solo) | 80-200k | 30-60k | $0.4-1 | 1-2% |
-| `/redige-us`, `/redige-brief`, `/retro*` | 30-80k | 10-25k | $0.1-0.3 | <1% |
-| Agent solo (invocation directe) | 20-50k | 10-20k | $0.05-0.5 | <1% |
+| Claude | Opus | Sonnet | Haiku | A renseigner |
+| OpenAI Codex | gpt-5.5 / gpt-5.3-codex | gpt-5.4-mini | gpt-5.4-nano si disponible | A renseigner |
+
+**Prompt caching / contexte reutilise** : quand le fournisseur le permet, garder les instructions stables dans les prompts system et mettre les variables dans le message utilisateur. Les gains reels dependent du provider et du plan.
 
 ---
 
-## Répartition type d'un `/call-tech-lead` complet
+## Profils de profondeur
 
-| Phase | Tokens | % total |
+Les orchestrateurs acceptent `--depth=lean|standard|full`.
+
+| Profil | Usage | Agents | Round 2 | Gain attendu |
+|---|---|---|---|---|
+| `lean` | Tache localisee, risque faible, besoin clair | 2-3 agents cibles | Seulement risque bloquant | -40 a -70% |
+| `standard` | Feature classique | 3-4 agents utiles | Seulement friction actionnable | Reference |
+| `full` | Architecture, securite, data, IA, go-to-market structurant | Tous les agents pertinents | Debat complet si utile | +30 a +80% |
+
+Regle par defaut : commencer en `standard`, retrograder en `lean` si le besoin est simple, passer en `full` uniquement si le risque le justifie.
+
+---
+
+## Estimations par skill
+
+| Skill | Tokens brut | Avec cache / contexte reutilise | Commentaire |
+|---|---|---|---|
+| `/call-tech-lead --depth=lean` | 180-450k | 45-120k | 2-3 agents, round 2 rare |
+| `/call-tech-lead --depth=standard` | 350-900k | 90-240k | 3-4 agents, bon defaut |
+| `/call-tech-lead --depth=full` | 600k-1.4M | 150-350k | Pour les vrais arbitrages multi-domaines |
+| `/call-growth-lead --depth=lean` | 120-300k | 35-90k | Brief ou campagne localisee |
+| `/call-growth-lead --depth=standard` | 250-650k | 70-190k | Initiative commerciale classique |
+| `/call-growth-lead --depth=full` | 400-900k | 110-260k | Positionnement, pricing, lancement majeur |
+| Skill solo (`/audit-funnel`, `/ship-landing`, etc.) | 80-200k | 30-60k | Preferable si le scope est etroit |
+| Agent solo | 20-50k | 10-20k | Ideal pour une question fermee |
+
+---
+
+## Repartition type d'un `/call-tech-lead --depth=standard`
+
+| Phase | Tokens | Optimisation |
 |---|---|---|
-| 0-1 Intake & routing | 15-30k | 3% |
-| 2 PO rédige US | 40-80k | 8% |
-| 3 Round 1 (5 agents) | 200-350k | 40% |
-| 4 Débats Round 2 | 60-200k | 15% |
-| 5 Plan final | 50-120k | 12% |
-| 6 Implémentation | 150-400k | 25% |
-| 7 Review + QA | 50-150k | 10% |
-| 8 Ship | 15-30k | 3% |
-| **Total brut** | **600k-1.4M** | — |
-| **Effective avec cache** | 150-350k | — |
-| **Équivalent API** | **$2-5** | — |
+| 0-1 Intake & routing | 15-30k | Refuser les demandes triviales |
+| 2 PO redige US | 30-70k | Reutiliser une US existante |
+| 3 Round 1 (3-4 agents) | 120-280k | Avis courts limites a 300 mots |
+| 4 Round 2 facultatif | 0-120k | Lancer seulement si friction actionnable |
+| 5 Plan final | 40-100k | Referencer les artefacts precedents |
+| 6 Implementation | 120-350k | Scope de fichiers explicite |
+| 7 Review + QA | 40-130k | Tests cibles, pas de matrice inutile |
+| 8 Ship | 10-25k | Resume concis |
+| **Total brut** | **350-900k** | — |
 
 ---
 
-## Top 10 optimisations SANS baisse de qualité
+## Top 10 optimisations sans baisse de qualite
 
-### 1. Refus d'orchestrer les triviaux — économie 80-95%
-Le skill doit refuser de convoquer l'équipe pour : typo, one-liner, refacto mineur, question de doc. Propose direct `Edit` ou `/investigate-bug`.
+### 1. Utiliser `--depth=lean` quand le risque est faible — economie 40-70%
+Un besoin localise n'a pas besoin de toute l'equipe. Exemple : correction UI simple, endpoint isole, wording, petit flux QA.
 
-### 2. Fournir le contexte précis en input — économie 20-40%
-Plus tu donnes de contexte pertinent (fichiers concernés, US existante, contraintes), moins les agents consomment en clarification.
+### 2. Rendre le round 2 facultatif — economie 15-35%
+Si les avis du round 1 convergent, ecrire "Aucune friction actionnable detectee" et passer au plan. Relancer un agent seulement pour trancher une contradiction concrete.
 
-### 3. Réutiliser les artefacts — économie 30%
-Au lieu de `/call-tech-lead "implémente X"`, passer `/call-tech-lead "implémente PLAN-X.md"` référence un plan déjà produit.
+### 3. Refuser d'orchestrer les triviaux — economie 80-95%
+Typo, one-liner, refacto mineur ou question de doc doivent etre traites directement ou par un skill solo.
 
-### 4. Agent solo pour questions fermées — économie 90%
-"Demande à `sales-b2b` : comment répondre à 'on a déjà Lever' ?" — pas besoin d'orchestrateur complet.
+### 4. Fournir le contexte precis en input — economie 20-40%
+Fichiers concernes, contrainte produit, US existante, logs, captures, budget et definition of done evitent les clarifications.
 
-### 5. `/fullstack-lead-tech` seul si US claire — économie 60-80%
-Si tu as une US bien cadrée et que tu n'as pas besoin de débats, `/fullstack-lead-tech` produit le plan tech direct, sans orchestration multi-agents.
+### 5. Reutiliser les artefacts — economie 30%
+Preferer `/call-tech-lead "implemente PLAN-X.md"` a une demande vague qui force les agents a recreer le contexte.
 
-### 6. Mode auto pour runs longs sans décision critique
-Libère le dev (pas de checkpoints), budget préservé sur des features "classiques".
+### 6. Agent solo pour questions fermees — economie 90%
+Exemple : "Demande a `sales-b2b` comment repondre a cette objection." Pas besoin d'orchestrateur.
 
-### 7. Mode semi pour runs à risque
-Les checkpoints évitent des runs perdus si l'orchestrateur part dans une mauvaise direction.
+### 7. Skill specialise si le scope est clair — economie 60-80%
+`/fullstack-lead-tech`, `/audit-funnel`, `/ship-landing`, `/review-pr` ou `/qa-flow` suffisent souvent.
 
-### 8. Scope agents explicite — économie 15-30%
-"Skip cso, pas de signal sécu" — évite de convoquer un agent inutile.
+### 8. Scope agents explicite — economie 15-30%
+Exemple : "skip cso, pas de signal securite" ou "skip content-seo, pas de besoin SEO".
 
-### 9. Prompt caching préservé
-Variables dans le user message, pas le system prompt. Voir [`PATTERNS.md`](../starter-kit-equipes-claude/PATTERNS.md) Pattern 3.
+### 9. Modeles adaptes au role
+Utiliser le modele le plus fort seulement pour les arbitrages complexes. Garder les agents d'execution ou d'analyse cadree sur un modele plus economique.
 
-### 10. Répartition Opus/Sonnet optimisée
-Seuls 2 agents en Opus par défaut (full-stack-lead, cso côté tech ; growth-lead, sales-b2b côté growth). Les autres en Sonnet. Voir [`PATTERNS.md`](../starter-kit-equipes-claude/PATTERNS.md) Pattern 2.
-
----
-
-## Leviers à éviter (qui dégradent la qualité)
-
-- ❌ **Passer tous les agents en Haiku** : la qualité de raisonnement s'effondre sur les arbitrages complexes.
-- ❌ **Sauter la phase 3 round 1** : les avis indépendants sont la base de la valeur de l'orchestration.
-- ❌ **Squeezer les débats phase 4** : c'est là que les frictions sont arbitrées.
-- ❌ **Refuser tous les checkpoints en mode semi** : tu perds le contrôle direction.
-- ❌ **Donner trop peu de contexte en input** : les agents vont le réclamer en rounds de clarification (plus cher).
+### 10. Mode semi pour les runs a risque
+Un checkpoint peut economiser un run entier si la direction initiale est mauvaise. En revanche, le mode auto reste utile pour les taches classiques bien cadrees.
 
 ---
 
-## Budget sur plan Claude Max 20x
+## Leviers a eviter
 
-Typiquement :
-- **1 run `/call-tech-lead` ≈ 5-10% d'une session Opus 5h**
-- Budget confortable : **60-160 runs `/call-tech-lead` / semaine** sans toucher le weekly cap Opus
-- Si tu approches le cap Opus : passe `full-stack-lead` et `cso` en Sonnet temporairement.
+- Ne pas mettre tous les agents sur le modele le plus economique : les arbitrages complexes chutent en qualite.
+- Ne pas sauter le round 1 sur un sujet ambigu : les avis independants font la valeur de l'orchestration.
+- Ne pas supprimer un debat critique : si securite, data, pricing ou architecture divergent vraiment, le round 2 est rentable.
+- Ne pas donner trop peu de contexte : les agents le recreeront en clarifications, ce qui coute plus cher.
+- Ne pas utiliser `full` par defaut : c'est un mode de risque, pas un mode de confort.
 
 ---
 
-## Tracking réel
+## Tracking reel
 
-Pour tracker tes vrais coûts :
+Pour suivre les vrais couts :
 
-1. Console Anthropic → usage par API key
-2. Sentry / Datadog → metrics custom si tu logues les runs
-3. `TRANSCRIPT.md` → chaque run orchestré indique son coût final en pied de page
-
-Actualise ce fichier tous les 3 mois avec les vrais chiffres observés.
+1. Console fournisseur (Anthropic, OpenAI, etc.) pour usage et couts.
+2. `TRANSCRIPT.md` : chaque run orchestre doit inclure tokens, agents, depth, round 2 lance ou non.
+3. Logs applicatifs si tu mesures les runs en CI ou dans un outil interne.
+4. Claude Code : `monitor-ccu` pour suivre localement sessions, modeles, sous-agents et couts.
+5. Retro apres les gros runs : decisions utiles, agents inutiles, prompts a raccourcir.
+6. Actualisation trimestrielle de ce fichier avec les chiffres observes.

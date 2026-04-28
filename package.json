@@ -1,0 +1,17 @@
+{
+  "name": "virtual-staff-starter-kit",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "virtual-staff-setup": "./scripts/install.mjs"
+  },
+  "scripts": {
+    "setup": "node scripts/install.mjs",
+    "generate:codex": "node scripts/generate-codex-templates.mjs",
+    "validate": "node scripts/validate-templates.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

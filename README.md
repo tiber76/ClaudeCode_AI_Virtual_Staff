@@ -1,106 +1,211 @@
-# Starter Kit — Équipes virtuelles Claude Code
+# Starter Kit — Equipes Virtuelles Claude Code & OpenAI Codex
 
-Un kit portable pour installer sur **n'importe quel projet** un système d'équipes virtuelles Claude Code, skills orchestrés, commandes et rituels de gouvernance. Testé en production sur un SaaS B2B depuis plusieurs mois, puis dépouillé de tout contexte spécifique pour être utilisable partout.
+Ce depot installe dans un projet une equipe virtuelle d'agents : produit, tech, design, QA, securite, data, IA, growth, sales et contenu.
 
-> **Pour qui ?** Un développeur solo ou une petite équipe qui veut orchestrer Claude Code comme une vraie équipe d'ingénieurs + produit + design + QA + sécu + data + growth, sans perdre 3 semaines à tout réinventer.
+Le kit fonctionne avec deux outils :
 
----
+| Outil | Invocation | Fichiers installes |
+|---|---|---|
+| Claude Code | `/setup-project --ai`, `/call-tech-lead ...` | `.claude/agents`, `.claude/skills`, `.claude/commands` |
+| OpenAI Codex | `$setup-project --ai`, `$call-tech-lead ...` | `.agents/skills`, `.codex/agents`, `AGENTS.md` |
 
-## Ce que tu obtiens
+Le fonctionnement reste le meme dans les deux cas : un orchestrateur comprend le besoin, choisit les agents utiles, collecte des avis independants, arbitre les frictions, implemente ou produit les livrables, verifie, puis documente le run dans un `TRANSCRIPT.md`.
 
-1. **13 agents spécialisés** (.claude/agents/) couvrant toute la chaîne de valeur logicielle et commerciale :
-   - Équipe tech (7 agents) : PO, Full-Stack Lead, Designer UX/UI, QA Lead, CSO, Data Engineer, AI/LLM Engineer
-   - Équipe growth (6 agents) : Growth Lead, Sales B2B, Customer Success, Copywriter & Brand, Content & SEO, Marketing Analytics
+## Disclaimer Tokens
 
-2. **15 skills** (.claude/skills/) qui orchestrent ces agents ou livrent un artefact précis :
-   - Orchestrateurs : `/call-tech-lead`, `/call-growth-lead`
-   - Pré-PR tech : `/redige-us`, `/fullstack-lead-tech`, `/investigate-bug`, `/review-pr`, `/qa-flow`, `/ship-pr`, `/security-audit`
-   - Post-livraison : `/retro`, `/retro-campagne`
-   - Growth : `/redige-brief`, `/ship-landing`, `/audit-funnel`, `/brief-demo`
+Une equipe virtuelle multi-agents peut consommer beaucoup de tokens, surtout avec les gros modeles et les runs `--depth=full`. Commence petit, surveille les couts de ton fournisseur, et evite de convoquer toute l'equipe pour des sujets simples.
 
-3. **Un GUIDE-LLM.md** (doc/GUIDE-LLM.md) : source de vérité projet, 12 sections (git flow, clean code, tests, sécurité, UX, architecture, pièges connus).
+Le kit est fait pour s'ameliorer avec l'usage : lance `retro` apres les runs importants pour capitaliser ce qui marche, supprimer les agents rarement utiles, ajuster le routing et adapter les pratiques aux vrais besoins du projet.
 
-4. **Un système de backlog** (backlog.md) avec rappel systématique en début de session.
+Pour Claude Code, tu peux aussi monitorer gratuitement les sessions et sous-agents avec **Claude Code Usage Monitor** : https://github.com/tiber76/monitor-ccu. L'outil lit les fichiers locaux `~/.claude/projects/`, affiche les couts/tokens par session, les modeles utilises et le detail des sous-agents, sans API key ni service externe.
 
-5. **Un format de livrables standardisé** (US, plan tech, brief growth, landing, retro) dans `docs/`.
+## Installation Recommandee
 
-6. **Des rituels de capitalisation** : chaque bug/feature non-triviale termine par un `/retro` qui enrichit le GUIDE-LLM §12 (pièges connus) et la mémoire persistante.
+Le chemin normal est unique : **on clone, on lance `npm run setup`, puis l'AI configure le projet cible**.
 
----
+### 1. Lancer l'installateur
 
-## Philosophie
+Depuis ce depot clone :
 
-Les 5 principes non-négociables qui font que le système tient :
+```bash
+npm run setup
+```
 
-### 1. Un orchestrateur ≠ un agent
-Les skills `/call-tech-lead` et `/call-growth-lead` **convoquent dynamiquement** des agents spécialisés, les font débattre, puis tranchent. L'orchestrateur n'est jamais un agent lui-même.
+Le script pose 3 questions :
 
-### 2. Round 1 (avis indépendants) → Round 2 (débats croisés) → arbitrage
-Pattern rigoureux pour éviter l'écho de groupe : chaque agent donne son avis sans voir celui des autres, puis on force les confrontations sur les points de friction, puis l'orchestrateur tranche avec justification.
-
-### 3. Traçabilité totale via TRANSCRIPT.md
-Chaque run orchestré produit un fichier `TRANSCRIPT.md` qui documente qui a dit quoi, quelles frictions ont été arbitrées et pourquoi. Relecture asynchrone possible, audit post-mortem facile.
-
-### 4. Escalade humaine explicite, pas automatique
-Le skill tech ne convoque **jamais** les agents commerciaux sans ton accord explicite (et vice-versa). Pas d'auto-escalade, pas de surprise, pas de tokens brûlés.
-
-### 5. Règles absolues git + migrations + secrets
-- Ne JAMAIS merger une PR sans ordre explicite.
-- Ne JAMAIS commit sur `main` / `develop` directement.
-- Ne JAMAIS exécuter une migration SQL (l'humain joue en staging puis prod).
-- Ne JAMAIS push force / `--no-verify` / `--amend` sans demande explicite.
-
----
-
-## Par où commencer
-
-Lis dans cet ordre :
-
-| Fichier | Pour quoi faire |
+| Question | Exemple |
 |---|---|
-| **[README.md](README.md)** (ce fichier) | Vue d'ensemble |
-| **[CHECKLIST-KICKOFF.md](CHECKLIST-KICKOFF.md)** | La checklist pas à pas pour démarrer sur ton nouveau projet |
-| **[GUIDE-ADAPTATION.md](GUIDE-ADAPTATION.md)** | Le questionnaire de cadrage + mapping spécifique → générique |
-| **[ARCHITECTURE.md](ARCHITECTURE.md)** | La structure de fichiers et la logique de chargement Claude Code |
-| **[PATTERNS.md](PATTERNS.md)** | Les patterns méta (orchestrateur, rounds, TRANSCRIPT, Opus/Sonnet) |
-| **[REGLES-TRANSVERSES.md](REGLES-TRANSVERSES.md)** | Les règles git + sécurité + RGPD + process |
-| **templates/** | Tous les fichiers à copier-adapter |
+| Projet cible | `/Users/me/repos/mon-projet` |
+| Outil a installer | `codex`, `claude` ou `both` |
+| Si un fichier existe deja | `backup`, `abort` ou `overwrite` |
 
----
+Le script copie les bons fichiers, renomme les templates, met a jour `.gitignore`, puis cree :
 
-## Workflow d'adoption — version courte (15 min)
+- `virtual-staff-install-report.md` : rapport de copie.
+- `virtual-staff-ai-setup.md` : prompt pret a coller si besoin.
 
-1. Copie le contenu du dossier `templates/` à la racine de ton nouveau projet (voir [CHECKLIST-KICKOFF.md](CHECKLIST-KICKOFF.md) pour la procédure exacte).
-2. Lance `/setup-project` dans Claude Code : questionnaire de ~30 questions, le skill remplit automatiquement tous les placeholders.
-3. Lance une première feature via `/call-tech-lead "..."` en mode `--mode=semi` pour valider que l'orchestrateur tourne.
-4. Affine les agents au fur et à mesure — la première version n'est jamais parfaite (voir [GUIDE-ADAPTATION.md](GUIDE-ADAPTATION.md)).
+### 2. Ouvrir le projet cible
 
-Workflow détaillé dans [CHECKLIST-KICKOFF.md](CHECKLIST-KICKOFF.md).
+Ouvre ensuite **le projet cible**, pas ce depot starter kit.
 
----
+```text
+Claude Code : /setup-project --ai
+OpenAI Codex : $setup-project --ai
+```
 
-## Ce que ce kit NE résout PAS
+Note Claude Code : les commandes slash sont chargees depuis `.claude/commands/`. Si `/setup-project` n'apparait pas, ferme puis rouvre Claude Code a la racine du projet cible.
 
-- **Le contexte métier de ton produit** : tu dois l'apporter. Les agents sont des squelettes — leur valeur vient de ce que tu y injectes (domaine, rôles utilisateurs, contraintes, ton éditorial).
-- **La mémoire de Claude** : Claude Code a son propre système de mémoire persistante (`~/.claude/projects/.../memory/`). Ce kit ne le remplace pas, mais s'intègre avec.
-- **Le MCP / les hooks** : non inclus. Si tu veux auto-exécuter des commandes à certains moments du cycle, configure-le dans `.claude/settings.local.json` séparément.
-- **Le tracking des coûts Claude API** : le kit documente des estimations, mais ne monitore pas. Utilise la console Anthropic si tu veux des métriques réelles.
+### 3. Laisser l'AI adapter le kit
 
----
+`setup-project --ai` inspecte le repo cible, infere la stack, les commandes, les entites metier, les risques et les agents utiles. Il affiche une synthese puis pose seulement les questions bloquantes.
 
-## Évolution
+### 4. Faire un premier run court
 
-Ce kit est un **point de départ**, pas une bible. À mesure que tu capitalises sur ton projet :
+```text
+Claude Code : /call-tech-lead "Ajoute une petite feature test" --depth=lean --mode=semi
+OpenAI Codex : $call-tech-lead "Ajoute une petite feature test" --depth=lean --mode=semi
+```
 
-- Enrichis le §12 "Pièges connus" du GUIDE-LLM à chaque `/retro`.
-- Ajoute des sections spécifiques à ton domaine dans les agents.
-- Crée de nouveaux skills utilitaires si tu identifies un pattern répété.
-- Affine la répartition Opus/Sonnet selon ton plan Claude et tes besoins de raisonnement.
+`--depth=lean` evite de convoquer trop d'agents pour le premier essai.
 
-Le kit source est né minimaliste, il s'est étoffé au fil des features. Le tien fera pareil.
+## Quel Outil Choisir ?
 
----
+| Besoin | Choix conseille |
+|---|---|
+| Tu travailles deja dans Claude Code | `claude` |
+| Tu veux utiliser Codex / OpenAI | `codex` |
+| Tu veux tester les deux adapters | `both` |
+| Tu maintiens ce starter kit | modifier `templates/claude/`, puis regenerer `templates/codex/` |
 
-## Licence & attribution
+## Ce Que Le Kit Installe
 
-Usage libre, sans attribution requise. Si tu construis quelque chose d'intéressant avec, partage — le pattern mérite d'être répliqué.
+### Agents
+
+13 agents specialises :
+
+- Tech : `po-metier`, `full-stack-lead`, `designer-uxui`, `qa`, `cso`, `data-engineer`, `ai-llm-engineer`.
+- Growth : `growth-lead`, `sales-b2b`, `customer-success`, `copywriter-brand`, `content-seo`, `marketing-analytics`.
+
+### Skills
+
+16 skills :
+
+| Famille | Skills |
+|---|---|
+| Setup | `setup-project` |
+| Orchestration | `call-tech-lead`, `call-growth-lead` |
+| Tech | `redige-us`, `fullstack-lead-tech`, `investigate-bug`, `review-pr`, `qa-flow`, `ship-pr`, `security-audit` |
+| Growth | `redige-brief`, `ship-landing`, `audit-funnel`, `brief-demo`, `retro-campagne` |
+| Transverse | `retro` |
+
+### Documentation Projet
+
+Le setup installe aussi :
+
+- `docs/GUIDE-LLM.md` : source de verite projet.
+- `docs/EQUIPES-LLM.md` : cartographie agents/skills.
+- `docs/COUTS-LLM.md` : estimation tokens/couts.
+- `backlog.md` : dettes, risques, decisions a reprendre.
+
+## Utilisation Au Quotidien
+
+Pour une feature technique :
+
+```text
+/call-tech-lead "..." --depth=standard --mode=semi
+$call-tech-lead "..." --depth=standard --mode=semi
+```
+
+Pour une initiative growth :
+
+```text
+/call-growth-lead "..." --depth=standard --mode=semi
+$call-growth-lead "..." --depth=standard --mode=semi
+```
+
+Pour une tache courte, commence par `--depth=lean`. Pour une decision critique, utilise `--depth=full`.
+
+Apres une feature non triviale, lance une retro :
+
+```text
+Claude Code : /retro
+OpenAI Codex : $retro
+```
+
+La retro sert a mettre a jour les pratiques de l'equipe, le backlog et `docs/GUIDE-LLM.md`.
+
+## Sobriete Tokens Et Modeles
+
+Les orchestrateurs acceptent `--depth=lean|standard|full`.
+
+| Depth | Usage | Effet attendu |
+|---|---|---|
+| `lean` | petite feature, bug compris, refacto localise | moins d'agents, round 2 rare |
+| `standard` | feature produit normale | defaut recommande |
+| `full` | auth, paiement, PII, data model, IA, pricing, GTM majeur | qualite prioritaire |
+
+Le round 2 est facultatif : s'il n'y a pas de friction actionnable, aucun agent n'est relance.
+
+Modeles par defaut du kit :
+
+| Famille d'agents | Claude Code | OpenAI Codex |
+|---|---|---|
+| Architecture, securite critique | Opus (`full-stack-lead`, `cso`) | `gpt-5.3-codex` avec effort `high` |
+| Tests, data, IA integree au code | Sonnet | `gpt-5.3-codex` avec effort `medium` |
+| Produit, design, contenu, operations | Sonnet | `gpt-5.4-mini` avec effort `medium` |
+| Strategie growth / sales | Opus (`growth-lead`, `sales-b2b`) | `gpt-5.5` avec effort `high` |
+
+Ces defaults sont volontairement conservateurs. Ils doivent etre ajustes selon ton abonnement, tes couts reels et la criticite du projet. Detail : `OPTIMISATION-TOKENS.md`.
+
+Conseil pratique : apres 5 a 10 runs, relis les transcripts et lance `retro` pour identifier les agents trop souvent inutiles, les prompts trop longs et les decisions qui devraient etre automatisees ou simplifiees.
+
+Monitoring Claude Code : le projet gratuit `monitor-ccu` peut aider a suivre les couts, les modeles et les sous-agents en temps reel : https://github.com/tiber76/monitor-ccu.
+
+## Options Avancees
+
+### Installation non interactive
+
+Utile en script ou CI :
+
+```bash
+npm run setup -- --target /chemin/vers/projet --provider claude --conflicts backup
+npm run setup -- --target /chemin/vers/projet --provider codex --conflicts backup
+npm run setup -- --target /chemin/vers/projet --provider both --conflicts backup
+```
+
+### Installation manuelle
+
+La copie manuelle existe seulement comme reference de maintenance dans `templates/README.md`. Pour un utilisateur normal, garde `npm run setup`.
+
+### Maintenance Codex
+
+L'arbre Codex est genere depuis les sources Claude pour eviter deux sources de verite :
+
+```bash
+node scripts/generate-codex-templates.mjs
+node scripts/validate-templates.mjs
+```
+
+Validation attendue :
+
+```text
+Templates OK
+```
+
+## Fichiers A Lire Ensuite
+
+| Fichier | Usage |
+|---|---|
+| `CHECKLIST-KICKOFF.md` | Checklist d'installation et de verification |
+| `OPTIMISATION-TOKENS.md` | Depth, routing, rounds facultatifs, modeles |
+| `PORTAGE-CODEX.md` | Mapping Claude Code vers Codex |
+| `ARCHITECTURE.md` | Fonctionnement interne des orchestrateurs |
+| `PATTERNS.md` | Patterns invariants du systeme |
+| `REGLES-TRANSVERSES.md` | Regles git, securite, tests, process |
+| `GUIDE-ADAPTATION.md` | Personnalisation fine apres setup |
+
+## Limites
+
+- `setup-project --ai` configure les placeholders generiques, mais les sections metier fines peuvent rester a completer.
+- Les workflows preparent les PRs et les livrables, mais ne font pas les actes irreversibles sans instruction explicite : merge, publication, envoi commercial, migration prod.
+- Les couts et modeles dependent du fournisseur et du plan utilise.

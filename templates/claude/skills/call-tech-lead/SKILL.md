@@ -32,11 +32,15 @@ Orchestrer une équipe virtuelle d'experts spécialisés sur {{PROJECT_NAME}} ({
 ## Format d'invocation
 
 ```
-/call-tech-lead <besoin en texte libre> [--mode=auto|semi]
+/call-tech-lead <besoin en texte libre> [--mode=auto|semi] [--depth=lean|standard|full]
 ```
 
 - **Mode par défaut** : `semi` (checkpoints aux 3 jalons clés).
 - Pour auto : `--mode=auto`.
+- **Depth par défaut** : `standard`.
+  - `lean` : routing serré, avis courts, round 2 désactivé sauf friction critique.
+  - `standard` : agents ciblés, round 2 uniquement si vraie friction.
+  - `full` : orchestration complète, utile pour features critiques, sécurité, data ou architecture lourde.
 
 ## L'équipe virtuelle
 
@@ -80,11 +84,29 @@ Protocole strict :
 - ✅ Commit sur branche `{{GIT_PREFIX_FEATURE}}*` autorisé après tests verts.
 - ✅ `gh pr create --base {{GIT_DEFAULT_BRANCH}}` autorisé automatiquement.
 
+## Profils de coût — règle de sobriété
+
+Le tech-lead choisit le profil le moins cher qui reste sûr. Si l'utilisateur ne précise pas `--depth`, utiliser `standard`, mais rétrograder en `lean` pour une tâche simple et demander confirmation avant de passer en `full`.
+
+| Depth | Agents max hors PO | Round 1 | Round 2 | Usage |
+|---|---:|---|---|---|
+| `lean` | 2-3 | 150-220 mots / agent | Seulement si risque critique | petite feature, refacto localisé, bug déjà compris |
+| `standard` | 3-4 | 250-320 mots / agent | Seulement si friction réelle | feature produit normale |
+| `full` | Tous les agents pertinents | 350-450 mots / agent | Oui si frictions ou arbitrages lourds | auth, paiement, PII, data model, IA, migration, refonte majeure |
+
+Garde-fous token :
+
+- Ne jamais convoquer un agent "au cas où". Chaque agent doit avoir un signal explicite.
+- `full-stack-lead` + `qa` forment le noyau minimal technique.
+- `po-metier` est requis pour une feature utilisateur, facultatif pour refacto interne ou bug technique.
+- `designer-uxui`, `cso`, `data-engineer`, `ai-llm-engineer` sont opt-in par signal.
+- Le round 2 est **facultatif** : s'il n'y a pas de désaccord actionnable, écrire "Aucune friction nécessitant débat" dans `04-round2-debates.md` et passer au plan.
+
 ## Les 8 phases du flux
 
 ### Phase 0 — Intake & setup
 
-1. Parse le besoin et `--mode` (défaut : `semi`).
+1. Parse le besoin, `--mode` (défaut : `semi`) et `--depth` (défaut : `standard`, avec rétrogradation possible en `lean` si tâche simple).
 2. Détermine un slug kebab-case à partir du besoin.
 3. Crée `.claude/call-call-tech-lead-runs/<YYYYMMDD-HHMMSS>-<slug>/` (inclus dans `.gitignore`).
 4. Écrit `00-input.md` avec le besoin verbatim + mode + timestamp.
@@ -108,9 +130,9 @@ Tech-lead analyse le besoin et remplit la grille :
 | Nouvelle page / composant UI / refonte / design | + **designer-uxui** |
 {{/IF}}
 | Refacto pur sans impact utilisateur | **full-stack-lead + qa uniquement** |
-| Feature complète "classique" | **tous les agents tech core** |
+| Feature complète "classique" | **full-stack-lead + qa + po-metier + spécialistes signalés** |
 {{#IF HAS_AI_FEATURE}}
-| Feature complète IA-first | **tous les agents + ai-llm-engineer** |
+| Feature complète IA-first | **full-stack-lead + qa + ai-llm-engineer + cso si PII/logs + data-engineer si agrégations** |
 {{/IF}}
 | Bug trivial / typo / one-liner | 🛑 **refuse d'orchestrer**, propose direct édition ou `/investigate-bug` |
 
@@ -138,7 +160,13 @@ Si le besoin contient un des signaux suivants, tech-lead **détecte** mais **n'a
 - **Mode auto** : jamais d'escalade. Documente dans TRANSCRIPT et continue sans eux.
 {{/IF}}
 
-Écrit `01-routing.md` avec justification (inclure le signal commercial détecté même si pas d'escalade). Update `TRANSCRIPT.md`.
+Applique ensuite les plafonds `--depth` :
+
+- `lean` : maximum 3 agents hors PO. Si plus de 3 signaux apparaissent, garder les risques bloquants dans l'ordre `cso` → `data-engineer` → `ai-llm-engineer` → `designer-uxui`, et documenter les agents exclus.
+- `standard` : maximum 4 agents hors PO, sauf risque sécurité/data/IA majeur.
+- `full` : pas de plafond autre que pertinence réelle.
+
+Écrit `01-routing.md` avec justification (inclure les agents exclus et le signal commercial détecté même si pas d'escalade). Update `TRANSCRIPT.md`.
 
 ### Phase 2 — PO rédige l'US
 
@@ -158,7 +186,7 @@ Pour **chaque agent convoqué sauf PO** (déjà intervenu), tech-lead délègue 
 
 > "Voici l'US : [contenu de 02-us.md].
 >
-> Donne ton avis depuis ton rôle : risques, contraintes, propositions, points à challenger chez les autres experts. **Cite des fichiers existants avec lignes exactes (`fichier.ext:L42-55`)** quand tu proposes de modifier du code existant — sans ligne exacte, c'est une hypothèse à vérifier. 400 mots max. Format structuré (bullets)."
+> Donne ton avis depuis ton rôle : risques, contraintes, propositions, points à challenger chez les autres experts. **Cite des fichiers existants avec lignes exactes (`fichier.ext:L42-55`)** quand tu proposes de modifier du code existant — sans ligne exacte, c'est une hypothèse à vérifier. Format structuré (bullets). Budget : `lean` 200 mots max, `standard` 300 mots max, `full` 450 mots max."
 
 **Spécificités par agent** :
 - **`qa`** : demande explicitement le **tableau de couverture US→tests exhaustif** (toutes les sections de son mandat, y compris pièges connus du projet). Pour tout composant UI > 100 lignes, exige la question *"quelles fonctions pures extraites et testables sans DOM ?"*.
@@ -174,7 +202,7 @@ Chaque output → `03-round1-<agent>.md`.
 
 Update TRANSCRIPT avec extrait 3-5 lignes de chaque avis sous `### Round 1 — avis <agent>`.
 
-### Phase 4 — Round 2 : challenges croisés
+### Phase 4 — Round 2 : challenges croisés facultatifs
 
 Tech-lead lit tous les round1 + US, identifie les **points de friction** :
 
@@ -208,6 +236,8 @@ Pour **chaque point de friction** identifié :
 **Règle d'escalade** :
 - **Mode `--mode=semi`** : si désaccord persiste après 2 rounds sur un point Critique → `AskUserQuestion` à l'utilisateur.
 - **Mode `--mode=auto`** : tech-lead tranche seul, documente **explicitement** dans TRANSCRIPT : "Auto-arbitrage sans escalade : <raison>".
+- **Depth `lean`** : ne lancer le round 2 que pour une friction bloquante ou un risque sécurité/data/IA. Sinon écrire une note de synthèse sans redéléguer.
+- **Aucune friction** : ne pas lancer d'agents. Écrire `04-round2-debates.md` avec "Aucune friction actionnable détectée" + 3-5 lignes de justification.
 
 **Update TRANSCRIPT** avec les débats complets sous `## ⚔️ Phase 4 — Débats`.
 
@@ -510,9 +540,9 @@ Le skill `/call-tech-lead` **appelle** les skills existants comme sous-routines 
 `/call-growth-lead`, `/redige-brief`, `/ship-landing`, `/audit-funnel`, `/brief-demo`, `/retro-campagne` sont des **skills peer**, pas des sous-routines. Tech-lead ne les appelle jamais automatiquement. Si un signal commercial émerge, escalade opt-in uniquement (voir section Routing).
 {{/IF}}
 
-## Répartition Opus / Sonnet (optimisée Max 20x)
+## Répartition modèles (Claude)
 
-Pour préserver le quota Opus hebdomadaire du plan Claude Max 20x, seuls les agents dont le raisonnement est **vraiment complexe** utilisent Opus :
+Pour préserver le budget du modèle premium, seuls les agents dont le raisonnement est **vraiment complexe** utilisent Opus :
 
 | Agent | Modèle | Raison |
 |---|---|---|
@@ -542,9 +572,10 @@ Le skill **doit afficher** avant de commencer :
 Scope détecté : <routing phase 1 preview>
 Agents : <liste> (<N> agents)
 Mode : <semi|auto>
+Depth : <lean|standard|full>
 Tokens estimés : <X-Yk> (range selon complexité)
 Équivalent API : ~$<Z> (avec prompt caching)
-Équivalent Max 20x : ~<W>% d'une session Opus 5h
+Budget plan : <impact estimé selon fournisseur>
 Optimisations possibles : <pointeurs si applicable>
 ────────────────────────────────
 Continuer ? (y/n) — en mode semi uniquement
@@ -552,21 +583,21 @@ Continuer ? (y/n) — en mode semi uniquement
 
 En **mode auto** : affiche l'estimation mais continue sans attendre.
 
-### Répartition par phase (feature complète)
+### Répartition par phase (feature standard)
 
 | Phase | Tokens | % total |
 |---|---|---|
 | 0-1 Intake & routing | 15-30k | 3% |
-| 2 PO rédige US | 40-80k | 8% |
-| 3 Round 1 (5 agents) | 200-350k | 40% |
-| 4 Débats Round 2 | 60-200k | 15% |
-| 5 Plan final | 50-120k | 12% |
-| 6 Implémentation | 150-400k | 25% |
-| 7 Review + QA | 50-150k | 10% |
+| 2 PO rédige US | 30-70k | 8% |
+| 3 Round 1 (3-4 agents) | 120-280k | 35% |
+| 4 Round 2 facultatif | 0-120k | 0-15% |
+| 5 Plan final | 40-100k | 12% |
+| 6 Implémentation | 120-350k | 30% |
+| 7 Review + QA | 40-130k | 10% |
 | 8 Ship | 15-30k | 3% |
-| **Total brut** | **600k-1.4M** | — |
-| **Effective avec cache** | 150-350k | — |
-| **Équivalent API** | **$2-5** | — |
+| **Total brut** | **350-900k** | — |
+| **Profil `lean`** | **180-450k** | — |
+| **Profil `full`** | **600k-1.4M** | — |
 
 ### Top coût par agent (ordre décroissant)
 
@@ -591,20 +622,20 @@ En **mode auto** : affiche l'estimation mais continue sans attendre.
   - qa (Sonnet) : ~Xk (~$Y)
   - ...
 - Durée totale : <MmSs>
-- % session Opus 5h (Max 20x) : ~<W>%
+- Budget plan : <impact estimé selon fournisseur>
 ```
 
 ### Optimisations disponibles
 
 Voir `docs/COUTS-LLM.md` pour les 10 optimisations SANS baisse de qualité. Les principales applicables à `/call-tech-lead` :
 
-1. **Fournir contexte précis** en input (-20-40%)
-2. **Scope agents** explicite ("skip cso, pas de signal sécu") (-15-30%)
-3. **Référencer US/plan existants** (`/call-tech-lead "implémente PLAN-X.md"`) (-30%)
-4. **Mode semi** pour features à risque (économise les runs perdus)
-5. **Utiliser `/fullstack-lead-tech` seul** si US claire et pas besoin de débats (-60-80%)
+1. **Utiliser `--depth=lean`** quand le risque est faible (-40-70%)
+2. **Ne pas lancer le round 2** sans friction actionnable (-15-35%)
+3. **Fournir contexte précis** en input (-20-40%)
+4. **Scope agents** explicite ("skip cso, pas de signal sécu") (-15-30%)
+5. **Référencer US/plan existants** (`/call-tech-lead "implémente PLAN-X.md"`) (-30%)
 
-**Sur plan Max 20x** : 1 run `/call-tech-lead` ≈ 5-10% d'une session Opus 5h. Budget confortable : 60-160 runs/semaine.
+**Budget** : dépend du fournisseur et du plan. Toujours tracer `depth`, agents invoqués et round 2 lancé/non lancé dans `TRANSCRIPT.md`.
 
 **Quand le jeu en vaut la chandelle** :
 - ✅ Feature complexe (> 1h conception seul)
@@ -624,7 +655,7 @@ Après avoir fini (PR ouverte ou toutes les PR livrées), **en plus du TRANSCRIP
 4. **Tableau des changements visibles** (ex : avant/après d'un flux, nouvelles sections, features exposées…).
 5. **Ce qui n'a pas été fait** et pourquoi (backlog reporté, scope volontairement limité).
 6. **Décisions prises en autonomie** quand le mode auto a tranché seul.
-7. **Coût** : tokens approximatifs, équivalent API, équivalent % session Opus 5h.
+7. **Coût** : tokens approximatifs, équivalent API si disponible, impact budget selon fournisseur.
 
 ### Règles de rédaction
 
@@ -648,8 +679,9 @@ Le résumé arrive **avant** toute autre proposition (retro, next steps). C'est 
 ## Anti-patterns de l'orchestrateur
 
 - ❌ Orchestrer une feature triviale (gaspille tokens).
-- ❌ Sauter Phase 3 round 1 (les avis indépendants sont la base de la valeur).
-- ❌ Squeezer les débats (Phase 4) pour aller plus vite — c'est là que la qualité se joue.
+- ❌ Sauter Phase 3 round 1 sur un sujet ambigu (les avis indépendants sont la base de la valeur).
+- ❌ Lancer Phase 4 sans friction actionnable — le round 2 est facultatif.
+- ❌ Supprimer un débat critique quand sécurité, data, IA ou architecture divergent vraiment.
 - ❌ Commit sur `{{GIT_DEFAULT_BRANCH}}` / `{{GIT_PROD_BRANCH}}` (ne jamais).
 - ❌ Merger la PR automatiquement (règle §0).
 {{#IF HAS_MIGRATIONS}}

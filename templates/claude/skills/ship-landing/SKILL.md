@@ -48,7 +48,7 @@ Par défaut : détecte le type depuis le besoin.
 ### 1. Recherche contextuelle
 
 - Lit l'ADN marque dans `.claude/agents/copywriter-brand.md` (voir `{{TONE_REGISTER}}`, `{{TONE_BANNED_WORDS}}`, `{{TONE_SIGNATURE_PHRASES}}`, `{{TONE_EXAMPLES}}`)
-- Lit le positionnement dans `.claude/agents/call-growth-lead.md`
+- Lit le positionnement dans `.claude/skills/call-growth-lead/SKILL.md`
 - Lit les pages existantes pertinentes (homepage, pricing, etc.)
 - Identifie l'ICP cible et le stage du funnel (TOFU/MOFU/BOFU)
 
@@ -338,7 +338,7 @@ Si invoqué via `/call-growth-lead`, l'agent `copywriter-brand` produit. Sinon, 
 - `.claude/agents/copywriter-brand.md` — ton, mots bannis, templates
 - `.claude/agents/designer-uxui.md` — design system
 - `.claude/agents/marketing-analytics.md` — tracking plan
-- `.claude/agents/call-growth-lead.md` — positionnement
+- `.claude/skills/call-growth-lead/SKILL.md` — positionnement
 - `docs/growth/landings/` — landings existantes
 
 ## 💰 Coût indicatif

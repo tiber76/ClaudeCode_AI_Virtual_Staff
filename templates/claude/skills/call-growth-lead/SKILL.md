@@ -35,11 +35,15 @@ Orchestrer une équipe virtuelle d'experts commerciaux & marketing sur {{PROJECT
 ## Format d'invocation
 
 ```
-/call-growth-lead <besoin en texte libre> [--mode=auto|semi]
+/call-growth-lead <besoin en texte libre> [--mode=auto|semi] [--depth=lean|standard|full]
 ```
 
 - **Mode par défaut** : `semi` (checkpoints aux 3 jalons clés : brief validé / plan validé / livrables prêts).
 - Mode auto : `--mode=auto`.
+- **Depth par défaut** : `standard`.
+  - `lean` : growth-lead + 1-2 spécialistes, pas de débat sauf contradiction majeure.
+  - `standard` : spécialistes ciblés, débat uniquement si friction actionnable.
+  - `full` : go-to-market complet ou refonte stratégique.
 
 ## L'équipe virtuelle
 
@@ -66,11 +70,21 @@ Agents dans `.claude/agents/` :
 - ✅ Rédaction de drafts, plans, briefs, copies dans `docs/growth/` → OK.
 - ✅ Simulation d'A/B test, calcul de sample size, audit funnel conceptuel → OK.
 
+## Profils de coût — règle de sobriété
+
+| Depth | Agents max hors growth-lead | Round 1 | Round 2 | Usage |
+|---|---:|---|---|---|
+| `lean` | 1-2 | 150-220 mots / agent | Non sauf contradiction majeure | brief rapide, landing simple, séquence courte |
+| `standard` | 2-3 | 250-320 mots / agent | Seulement si friction réelle | campagne normale |
+| `full` | Tous les agents pertinents | 350-450 mots / agent | Oui si arbitrage stratégique | GTM nouvelle feature, pricing, repositionnement |
+
+Ne jamais convoquer toute l'équipe pour un contenu simple. Pour une landing seule, `copywriter-brand + marketing-analytics` suffit souvent. Pour un contenu SEO, `content-seo + copywriter-brand` suffit souvent.
+
 ## Les 7 phases du flux
 
 ### Phase 0 — Intake & setup
 
-1. Parse le besoin et `--mode` (défaut : `semi`).
+1. Parse le besoin, `--mode` (défaut : `semi`) et `--depth` (défaut : `standard`, rétrograder en `lean` si demande simple).
 2. Détermine un slug kebab-case à partir du besoin.
 3. Crée `.claude/call-call-growth-lead-runs/<YYYYMMDD-HHMMSS>-<slug>/` (hors git).
 4. Écrit `00-input.md` avec le besoin verbatim + mode + timestamp.
@@ -98,10 +112,16 @@ Le `growth-lead` (agent) analyse le besoin et remplit la grille :
 {{#IF HAS_PRICING_TIERS}}
 | Refonte pricing / packaging | growth-lead{{#IF IS_B2B}} + sales-b2b{{/IF}} + customer-success + marketing-analytics |
 {{/IF}}
-| Go-to-market nouvelle feature | **tous les agents activés** |
+| Go-to-market nouvelle feature | growth-lead + copywriter-brand + marketing-analytics + spécialistes signalés |
 | Question simple / brief rapide | 🛑 **refuse d'orchestrer**, propose réponse directe |
 
-Écrit `01-routing.md` avec justification. Update TRANSCRIPT.
+Applique ensuite les plafonds `--depth` :
+
+- `lean` : maximum 2 agents hors growth-lead.
+- `standard` : maximum 3 agents hors growth-lead.
+- `full` : pas de plafond autre que pertinence réelle.
+
+Écrit `01-routing.md` avec justification, y compris les agents exclus pour sobriété. Update TRANSCRIPT.
 
 ### Phase 2 — Brief (growth-lead rédige)
 
@@ -120,13 +140,13 @@ Pour chaque agent convoqué sauf growth-lead (déjà intervenu), délègue en pa
 
 > "Voici le brief : [contenu de 02-brief.md].
 >
-> Donne ton avis depuis ton rôle : risques, angles, contraintes, propositions de livrables, points à challenger chez les autres experts. Cite des ressources concrètes (templates, benchmarks, outils). 400 mots max. Format structuré (bullets)."
+> Donne ton avis depuis ton rôle : risques, angles, contraintes, propositions de livrables, points à challenger chez les autres experts. Cite des ressources concrètes (templates, benchmarks, outils). Format structuré (bullets). Budget : `lean` 200 mots max, `standard` 300 mots max, `full` 450 mots max."
 
 Chaque output → `03-round1-<agent>.md`.
 
 Update TRANSCRIPT avec extrait de chaque avis.
 
-### Phase 4 — Débats (Round 2)
+### Phase 4 — Débats facultatifs (Round 2)
 
 `growth-lead` identifie les frictions et arbitre :
 
@@ -146,6 +166,8 @@ Pour chaque point de friction :
 **Règle d'escalade** :
 - **Mode semi** : désaccord persistant sur point critique → `AskUserQuestion` à l'utilisateur.
 - **Mode auto** : arbitre seul, documente dans TRANSCRIPT "Auto-arbitrage : <raison>".
+- **Depth `lean`** : pas de round 2 sauf contradiction majeure sur positionnement, pricing, promesse ou risque légal.
+- **Aucune friction** : ne pas relancer d'agents. Écrire `04-round2-debates.md` avec "Aucune friction actionnable détectée" + justification.
 
 ### Phase 5 — Plan d'exécution
 
@@ -345,9 +367,10 @@ Le skill **doit afficher** avant de commencer :
 Scope détecté : <routing phase 1 preview>
 Agents : <liste> (<N> agents)
 Mode : <semi|auto>
+Depth : <lean|standard|full>
 Tokens estimés : <X-Yk>
 Équivalent API : ~$<Z> (avec prompt caching)
-Équivalent Max 20x : ~<W>% d'une session Opus 5h
+Budget plan : <impact estimé selon fournisseur>
 Optimisations possibles : <pointeurs si applicable>
 ────────────────────────────────
 Continuer ? (y/n) — en mode semi uniquement
@@ -355,20 +378,20 @@ Continuer ? (y/n) — en mode semi uniquement
 
 En **mode auto** : affiche l'estimation mais continue sans attendre.
 
-### Répartition par phase (initiative standard 6 agents)
+### Répartition par phase (initiative standard)
 
 | Phase | Tokens | % total |
 |---|---|---|
 | 0-1 Intake & routing | 15-30k | 6% |
 | 2 Brief SMART | 30-60k | 10% |
-| 3 Round 1 (5 agents) | 150-250k | 50% |
-| 4 Débats | 30-120k | 15% |
+| 3 Round 1 (3-4 agents) | 100-220k | 45% |
+| 4 Round 2 facultatif | 0-100k | 0-15% |
 | 5 Plan d'exécution | 30-60k | 10% |
 | 6 Livraison | 50-200k | 25% |
 | 7 Mesure & ship plan | 20-50k | 8% |
-| **Total brut** | **300k-800k** | — |
-| **Effective avec cache** | 80-230k | — |
-| **Équivalent API** | **$1-4** | — |
+| **Total brut** | **250-650k** | — |
+| **Profil `lean`** | **120-300k** | — |
+| **Profil `full`** | **400-900k** | — |
 
 ### Top coût par agent (ordre décroissant)
 
@@ -394,30 +417,31 @@ En **mode auto** : affiche l'estimation mais continue sans attendre.
   - copywriter-brand (Sonnet) : ~Xk (~$Y)
   - ...
 - Durée totale : <MmSs>
-- % session Opus 5h (Max 20x) : ~<W>%
+- Budget plan : <impact estimé selon fournisseur>
 ```
 
 ### Optimisations disponibles
 
 Voir `docs/COUTS-LLM.md` pour les 10 optimisations SANS baisse de qualité. Les principales applicables à `/call-growth-lead` :
 
-1. **Référencer un brief existant** (`/call-growth-lead "exécute BRIEF-X.md"`) (-30%)
-2. **Skills utilitaires solo** quand le scope est étroit (ex: `/ship-landing` seul vs `/call-growth-lead` full)
-3. **Scope agents** explicite ("skip content-seo, pas de besoin SEO") (-15-30%)
-4. **Mode semi** pour arrêter tôt si direction divergente
-5. **Agent solo** pour questions fermées (-90%)
+1. **Utiliser `--depth=lean`** pour les briefs et campagnes localisées (-40-70%)
+2. **Ne pas lancer le round 2** sans friction actionnable (-15-35%)
+3. **Référencer un brief existant** (`/call-growth-lead "exécute BRIEF-X.md"`) (-30%)
+4. **Skills utilitaires solo** quand le scope est étroit (ex: `/ship-landing` seul vs `/call-growth-lead` full)
+5. **Scope agents** explicite ("skip content-seo, pas de besoin SEO") (-15-30%)
 
 **Comparaison `/call-tech-lead` vs `/call-growth-lead`** : growth ~50% moins cher que tech car pas d'implémentation code (phases 6-7 tech sont les plus lourdes).
 
-**Sur plan Max 20x** : 1 run ≈ 3-5% d'une session Opus. Budget : 60-100 runs/semaine confortable.
+**Budget** : dépend du fournisseur et du plan. Toujours tracer `depth`, agents invoqués et round 2 lancé/non lancé dans `TRANSCRIPT.md`.
 
 ## Anti-patterns de l'orchestrateur
 
 - ❌ Orchestrer pour un brief rapide (gaspille tokens) → refuse.
 - ❌ Publier automatiquement un livrable → jamais.
 - ❌ Fabriquer des chiffres {{PROJECT_NAME}} → placeholder obligatoire.
-- ❌ Sauter Phase 3 (avis indépendants) → c'est la valeur du multi-agents.
-- ❌ Ignorer les débats → Phase 4 est où la qualité se joue.
+- ❌ Sauter Phase 3 sur un sujet ambigu → c'est la valeur du multi-agents.
+- ❌ Lancer Phase 4 sans friction actionnable → round 2 facultatif.
+- ❌ Supprimer un débat critique quand pricing, promesse, légal ou positionnement divergent vraiment.
 - ❌ Envoyer un email / faire un post / créer un compte externe → jamais.
 - ❌ S'auto-invoquer via `/call-tech-lead` → interdit, l'utilisateur opt-in manuellement.
 

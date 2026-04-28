@@ -3,7 +3,7 @@ name: setup-project
 description: |
   Questionnaire interactif qui remplit tous les placeholders du starter kit en une
   seule fois. Lance ce skill après avoir copié le kit dans un nouveau projet pour
-  adapter les 13 agents, 15 skills et la doc au contexte spécifique : stack,
+  adapter les 13 agents, 16 skills et la doc au contexte spécifique : stack,
   rôles utilisateurs, entités métier, ton éditorial, sécurité, pricing.
   Produit un rapport de configuration et un backlog des TODOs résiduels.
 allowed-tools:
@@ -34,8 +34,8 @@ Configurer le starter kit d'équipes virtuelles Claude Code en une seule session
 ## Prérequis
 Le kit doit être copié à la racine du projet :
 - `.claude/agents/*.md` (13 agents avec placeholders)
-- `.claude/skills/*/SKILL.md` (15 skills avec placeholders)
-- `.claude/commands/*.md` (15 alias)
+- `.claude/skills/*/SKILL.md` (16 skills avec placeholders)
+- `.claude/commands/*.md` (16 alias)
 - `docs/GUIDE-LLM.md` (squelette 12 sections)
 - `docs/EQUIPES-LLM.md` (doc équipe)
 - `docs/COUTS-LLM.md` (estimations tokens)
@@ -71,7 +71,94 @@ cp -r docs docs.backup-$(date +%Y%m%d-%H%M%S)
 cp backlog.md backlog.backup-$(date +%Y%m%d-%H%M%S).md
 ```
 
-### Étape 1 — Questionnaire (via `AskUserQuestion`)
+### Étape 1 — Découverte AI + questionnaire minimal
+
+Par défaut, utiliser le **mode AI-assisted** : inspecter le repo cible, inférer un maximum de réponses, puis demander seulement confirmation/corrections.
+
+Ne proposer le **mode complet** (les 6 vagues détaillées plus bas) que si l'utilisateur demande explicitement "setup complet", "questionnaire détaillé", ou si le projet est critique/régulé et que les inférences seraient trop risquées.
+
+#### Mode AI-assisted — recommandé
+
+Avant de poser des questions, lire le projet :
+
+```bash
+pwd
+find . -maxdepth 3 -type f \
+  ! -path "./.git/*" \
+  ! -path "./node_modules/*" \
+  ! -path "./vendor/*" \
+  ! -path "./dist/*" \
+  ! -path "./build/*" \
+  | sort | head -250
+```
+
+Puis lire seulement les fichiers utiles s'ils existent :
+
+- `README.md`, `package.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lockb`
+- `pyproject.toml`, `requirements.txt`, `poetry.lock`
+- `Gemfile`, `go.mod`, `Cargo.toml`, `composer.json`
+- `.env.example`, `.env.template`, `docker-compose.yml`, `Dockerfile`
+- configs tests : `playwright.config.*`, `cypress.config.*`, `vitest.config.*`, `jest.config.*`, `pytest.ini`
+- dossiers structurants : `app/`, `src/`, `pages/`, `routes/`, `api/`, `components/`, `lib/`, `server/`, `tests/`, `e2e/`
+
+Inférer :
+
+- nom, one-liner, type de projet ;
+- backend, frontend, DB/ORM, auth, tests, déploiement ;
+- rôles utilisateurs et entités métier probables ;
+- présence UI/design, paiement, RGPD/PII, 2FA, LLM/IA, growth/sales ;
+- branche courante et branches existantes via `git branch --show-current` et `git branch --list` ;
+- commandes probables : install, test, build, lint.
+
+Ensuite afficher une synthèse courte :
+
+```text
+Configuration inférée
+- Projet :
+- Stack :
+- Domaine :
+- Risques activés :
+- Agents proposés :
+- Inconnues :
+
+Valides-tu ? Réponds "ok", ou corrige uniquement les lignes fausses.
+```
+
+Règles :
+
+- Poser au maximum **3 questions** si des informations bloquantes manquent.
+- Si une information est utile mais non bloquante, écrire `<!-- TODO setup AI: ... -->` au lieu d'interrompre.
+- Ne pas inventer de business model, pricing, conformité ou métriques. Si absent : `none` ou `à préciser`.
+- Écrire dans `backlog.md` une entrée P2 "Compléter le setup AI" si des TODO restent.
+- Produire le rapport final comme en mode complet.
+
+#### Mode rapide manuel — fallback
+
+Poser ces questions en 2 vagues maximum :
+
+**Vague 1 — Cadrage**
+
+1. **Projet cible** : nom + phrase produit en une ligne.
+2. **Outil principal** : Claude Code / OpenAI Codex / les deux.
+3. **Type de projet** : SaaS B2B / SaaS B2C / app mobile / CLI / internal tool / open source / autre.
+4. **Stack en une phrase** : backend, frontend, DB, auth, tests si connus.
+
+**Vague 2 — Usage**
+
+5. **Domaine métier** : rôles utilisateurs et 3-5 entités principales.
+6. **Risques à activer** : UI/design, paiement, RGPD/PII, 2FA, LLM/IA, growth/sales.
+7. **Git** : branche de dev par défaut (`develop` si doute) et préfixe branches (`feature/` si doute).
+8. **Agents à garder** : proposer une liste pré-cochée déduite des réponses, demander seulement les suppressions évidentes.
+
+Ensuite :
+
+- Remplir les placeholders critiques avec les réponses.
+- Pour les détails manquants, choisir un default conservateur ou écrire `<!-- TODO setup rapide: ... -->`.
+- Ne pas bloquer sur les intégrations inconnues : utiliser `none` ou `à préciser`.
+- Écrire dans `backlog.md` une entrée P2 "Compléter le setup rapide" si des TODO restent.
+- Produire le rapport final comme en mode complet.
+
+#### Mode complet — optionnel
 
 Pose les questions en **6 vagues thématiques**, pas toutes d'un coup (fatigue cognitive).
 
@@ -216,7 +303,7 @@ Si placeholder résiduel → ajouter entrée dans `backlog.md` P1 : "Remplacer `
 ## Fichiers modifiés
 
 - 13 → X agents (N supprimés)
-- 15 → Y skills
+- 16 → Y skills
 - 6 docs mises à jour
 
 ## Placeholders résiduels (à traiter manuellement)

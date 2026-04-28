@@ -225,7 +225,7 @@ Si `growth-lead` ou `sales-b2b` veut une accroche chiffrée et qu'il n'y a pas d
 
 ## Référence
 
-- `.claude/agents/call-growth-lead.md` — positionnement & messaging stratégique
+- `.claude/skills/call-growth-lead/SKILL.md` — positionnement & messaging stratégique
 - `.claude/agents/content-seo.md` — coordination copy/SEO
 - `.claude/agents/designer-uxui.md` — ton aligné avec l'UI
 - `docs/GUIDE-LLM.md` §8 — ton éditorial produit

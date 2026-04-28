@@ -14,7 +14,7 @@ Le skill `/setup-project` remplit automatiquement les placeholders via un questi
 
 Le skill pose ~30 questions en 6 vagues (identité, stack, intégrations, domaine, ton, git/équipe), puis remplit tous les placeholders `{{VARIABLE}}` dans :
 - Les 13 agents `.claude/agents/*.md`
-- Les 15 skills `.claude/skills/*/SKILL.md`
+- Les 16 skills `.claude/skills/*/SKILL.md`
 - `docs/GUIDE-LLM.md` (squelette 12 sections)
 - `docs/EQUIPES-LLM.md`
 - `backlog.md`

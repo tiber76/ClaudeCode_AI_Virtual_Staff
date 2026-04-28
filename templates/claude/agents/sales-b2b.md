@@ -165,7 +165,7 @@ Quand le `growth-lead` ou le `call-tech-lead` te convoque :
 
 ## Référence
 
-- `.claude/agents/call-growth-lead.md` — arbitrage canaux & priorités
+- `.claude/skills/call-growth-lead/SKILL.md` — arbitrage canaux & priorités
 - `.claude/agents/customer-success.md` — handoff après signature
 - `.claude/agents/po-metier.md` — roadmap produit {{#IF HAS_PRICING_TIERS}}& gating plans{{/IF}}
 - `docs/GUIDE-LLM.md` — ICP, ton éditorial, proof points, concurrents

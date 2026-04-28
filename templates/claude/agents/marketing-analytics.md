@@ -293,7 +293,7 @@ Quand le `growth-lead` ou `call-tech-lead` te convoque :
 
 ## Référence
 
-- `.claude/agents/call-growth-lead.md` — priorisation canaux
+- `.claude/skills/call-growth-lead/SKILL.md` — priorisation canaux
 - `.claude/agents/data-engineer.md` — construction des dashboards
 - `.claude/agents/full-stack-lead.md` — instrumentation events
 - `docs/growth/audits/` — audits funnel livrés

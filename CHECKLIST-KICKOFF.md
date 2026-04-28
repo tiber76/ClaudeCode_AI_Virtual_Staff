@@ -1,13 +1,52 @@
 # Checklist — Mise en place sur un nouveau projet
 
-Checklist pas à pas pour installer le starter kit sur un projet sans contexte préalable. Compte **~2-4h** pour une installation soignée (la plupart du temps passe à remplir le GUIDE-LLM et à adapter les agents au domaine).
+Checklist pas à pas pour installer le starter kit sur un projet sans contexte préalable.
+
+## Installation rapide recommandée
+
+Depuis le dépôt cloné du starter kit :
+
+```bash
+npm run setup
+```
+
+Le script te guide en quelques questions :
+
+1. chemin du projet cible ;
+2. adapter à installer : `codex`, `claude` ou `both` ;
+3. stratégie si un fichier existe déjà : `backup`, `abort` ou `overwrite`.
+
+Il copie les fichiers, renomme les templates, met à jour `.gitignore` et écrit :
+
+- `virtual-staff-install-report.md`
+- `virtual-staff-ai-setup.md`
+
+Ensuite :
+
+- Claude Code : ouvrir le projet cible et lancer `/setup-project --ai`.
+- OpenAI Codex : ouvrir le projet cible et lancer `$setup-project --ai`.
+
+Note Claude Code : si `/setup-project` n'apparait pas dans l'autocompletion, ferme puis rouvre Claude Code a la racine du projet pour recharger `.claude/commands/`.
+
+Le setup interactif utilise maintenant un **mode AI-assisted par défaut** : l'AI inspecte le repo, infère la configuration, puis pose seulement les questions bloquantes. Le mode rapide manuel et le mode complet restent disponibles si tu les demandes explicitement.
+
+Premier run recommandé :
+
+```text
+/call-tech-lead "Petite feature de test" --depth=lean --mode=semi
+$call-tech-lead "Petite feature de test" --depth=lean --mode=semi
+```
+
+---
+
+Les phases ci-dessous documentent le fonctionnement manuel et les vérifications de fond. Compte **~2-4h** pour une installation très soignée avec personnalisation fine du domaine.
 
 ---
 
 ## Phase 1 — Pré-requis (15 min)
 
 - [ ] Ton projet est un repo git.
-- [ ] Tu utilises Claude Code (ou l'Agent SDK équivalent).
+- [ ] Tu utilises Claude Code ou OpenAI Codex.
 - [ ] Tu as un plan Claude Max (le kit suppose un quota généreux — sur API pure, ajuste la répartition Opus/Sonnet vers Sonnet partout).
 - [ ] Tu as `gh` CLI installé (`brew install gh` si besoin) pour les PR.
 - [ ] Ton projet a au minimum **deux branches** : `main` (prod, protégée) et `develop` (intégration). Si pas encore le cas : `git checkout -b develop && git push -u origin develop`.
@@ -28,7 +67,7 @@ Checklist pas à pas pour installer le starter kit sur un projet sans contexte p
   ton-projet/
   ├── .claude/
   │   ├── agents/           ← 13 fichiers .md
-  │   ├── skills/           ← 15 dossiers avec SKILL.md
+  │   ├── skills/           ← 16 dossiers avec SKILL.md
   │   ├── commands/         ← 16 fichiers .md (un par skill, pour l'autocomplétion /<nom>)
   │   └── settings.local.json
   ├── backlog.md
@@ -43,6 +82,7 @@ Checklist pas à pas pour installer le starter kit sur un projet sans contexte p
   ```
   .claude/call-call-tech-lead-runs/
   .claude/call-call-growth-lead-runs/
+  .codex/runs/
   ```
 
 ---
