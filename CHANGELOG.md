@@ -6,6 +6,55 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/). Versionning [S
 
 ---
 
+## [0.4.0] — 2026-05-13
+
+Cette release porte dans le kit publique les optimisations tokens éprouvées sur un projet privé en production. Elle introduit aussi un mécanisme d'update pour patcher les projets déjà installés en v0.3.0 sans écraser le travail utilisateur.
+
+### Added
+
+- **`CLAUDE.md` template à la racine du projet cible** (opt-in à l'install) :
+  - Section **Token efficiency** — principe "raisonnement profond, output court", zéro phrase transitoire avant tool call, bullets ultra-courtes, lecture ciblée obligatoire (`ripgrep` puis `Read` avec offset/limit), override sécurité/data loss/breaking/RGPD.
+  - Section **Compaction et survie contextuelle** — seuil 80% via `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=80`, hiérarchie 🔴/🟡/🟢, procédure post-compaction.
+  - Section **Délégation aux skills** — interdiction de l'injection inline (> 100 lignes), Read par chemin absolu, gain quantifié 14-35 k tokens par run multi-agents.
+  - Fichier : `templates/CLAUDE.md.template`.
+- **Script `npm run update`** (`scripts/update.mjs`) :
+  - Met à jour un projet déjà installé sans toucher au contenu utilisateur (`docs/GUIDE-LLM.md`, `.claude/settings.local.json`, `backlog.md`, etc.).
+  - Détecte les fichiers customisés via SHA-256 manifests (`scripts/manifests/v0.X.Y.json`).
+  - Dry-run par défaut. `--apply` pour écrire. `--conflicts backup|skip|abort` pour les customisés.
+  - Génère `virtual-staff-update-report.md` à la racine cible.
+- **Prompt fallback `templates/update-prompt.md`** pour mettre à jour sans avoir le kit cloné en local.
+- **Script `npm run generate:manifest`** (`scripts/generate-manifest.mjs`) :
+  - Génère un manifest SHA-256 des fichiers kit-managed pour une version donnée.
+  - Supporte `--from-git <ref>` pour calculer le manifest d'une version passée.
+- **Manifests** : `scripts/manifests/v0.3.0.json` et `scripts/manifests/v0.4.0.json`.
+- **Marqueurs version** en tête des fichiers root du kit : `<!-- virtual-staff-kit:<name> v<X.Y.Z> -->` sur `CLAUDE.md` et `AGENTS.md` (permet la détection lors de l'update).
+- **`MIGRATION-v0.4.md`** : guide pas-à-pas pour passer de v0.3.0 à v0.4.0 (3 chemins : script, prompt, manuel).
+
+### Changed
+
+- **`scripts/install.mjs`** : nouvelle question opt-in `"Installer aussi CLAUDE.md de référence à la racine ?"` (flags non-interactifs `--with-root-claudemd` / `--no-root-claudemd`).
+- **`templates/codex/AGENTS.md`** : ajout du marqueur version + sections Token efficiency, Délégation et Compaction (équivalent du `CLAUDE.md`, adapté vocabulaire Codex).
+- **`OPTIMISATION-TOKENS.md`** : nouvelles sections `Patterns D'Output`, `Lecture Ciblée`, `Délégation Aux Skills`, `Compaction Et Survie Contextuelle`. Les sections depth/routing/modèles existantes sont préservées.
+- **`scripts/validate-templates.mjs`** : nouvelles assertions sur la présence du marqueur version et du manifest correspondant à la version courante.
+- **`package.json`** : version bumpée à `0.4.0`, nouveaux scripts `update` et `generate:manifest`, nouveau bin `virtual-staff-update`.
+
+### Migration depuis 0.3.0
+
+Trois chemins documentés dans `MIGRATION-v0.4.md` :
+
+1. **Script (recommandé)** — depuis le kit cloné mis à jour :
+   ```bash
+   git pull                                                                 # récupérer v0.4.0
+   node scripts/update.mjs --target /chemin/vers/ton/projet                 # dry-run
+   node scripts/update.mjs --target /chemin/vers/ton/projet --apply         # exécute
+   ```
+2. **Prompt à coller** — si tu n'as pas le kit cloné : `templates/update-prompt.md` (cf. CHANGELOG entry).
+3. **Manuel** — copier à la main les fichiers depuis `templates/` vers ton projet.
+
+Le `CLAUDE.md` racine n'est PAS ajouté automatiquement par l'update (opt-in à l'install fresh uniquement). Pour l'ajouter à un projet existant, copier `templates/CLAUDE.md.template` → `<projet>/CLAUDE.md`.
+
+---
+
 ## [0.3.0] — 2026-04-28
 
 ### Added

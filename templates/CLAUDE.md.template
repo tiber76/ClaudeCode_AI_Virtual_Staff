@@ -1,0 +1,106 @@
+<!-- virtual-staff-kit:CLAUDE.md v0.4.0 -->
+# {{PROJECT_NAME}} — Préambule Claude Code
+
+Fichier auto-chargé par Claude Code à chaque session quand il est à la racine du projet.
+
+Ce fichier contient les **règles transverses** (output, compaction, délégation). Les détails projet (stack, conventions, pièges) sont dans `docs/GUIDE-LLM.md`. Les agents et skills sont dans `.claude/agents/` et `.claude/skills/`.
+
+> Ce template provient du kit `virtual-staff-starter-kit`. Tu peux le personnaliser, mais ne supprime pas la ligne de marqueur en tête : elle permet au script `npm run update` de détecter et mettre à jour ce fichier sans écraser tes modifications.
+
+## Sources de vérité à consulter avant toute feature non triviale
+
+- `docs/GUIDE-LLM.md` — règles projet, conventions, pièges connus.
+- `backlog.md` — vérifier qu'une entrée n'est pas déjà résolue avant d'attaquer.
+- `docs/COUTS-LLM.md` — budget tokens et optimisations quand le travail touche IA, prompts, agents ou orchestration.
+
+## Skills clés à préférer au codage direct
+
+- `/call-tech-lead <besoin> --depth=lean|standard|full` — orchestre l'équipe tech multi-agents (PO, full-stack-lead, designer, QA, CSO, data, IA).
+- `/call-growth-lead <besoin> --depth=lean|standard|full` — orchestre l'équipe growth (sales, CS, copy, SEO, analytics).
+- `/investigate-bug <symptôme>` — méthodologie root-cause avant patch.
+- `/review-pr` — checklist sécu / clean code / tests sur le diff.
+- `/qa-flow` — pyramide de tests (unit → intégration → E2E smoke → critical → full).
+- `/ship-pr` — chaîne pré-PR complète (tests → review → commit → PR).
+- `/retro` — capitalisation post-feature ou post-bug.
+
+## Token efficiency — règles transverses
+
+> Principe central : **raisonnement profond, output court**. La réflexion interne peut être longue ; la réponse user-facing reste minimale.
+
+- Zéro phrase transitoire avant un tool call. Jamais « Je vais maintenant... », « Voici ce que je fais... ». → tool call direct.
+- Zéro récap narratif après un tool call évident. Si le diff est visible, une ligne suffit.
+- Actions multiples → bullet list ultra-courte : `• Fix → fichier.ts`, `• Commit → feat(x)`. Pas de phrase.
+- Fin de réponse : une ligne de statut OU une question directe. Rien d'autre.
+- Pas de préambules de politesse (« D'accord », « Bien sûr »). Action directe.
+- Pas de tableaux décoratifs pour 2 items. Tableaux gardés pour ≥3 lignes × ≥2 colonnes utiles.
+- Pas de caveats défensifs sur points évidents. Caveats réservés aux risques réels : sécurité, data loss, breaking change, RGPD, perf.
+- Pas de devinette sur API, version, flag, SHA, nom de package. Vérifier avant d'affirmer.
+- Pas de re-lecture d'un fichier déjà lu sans changement.
+- Skip fichiers > 100 KB sauf nécessité concrète.
+- **Lecture ciblée obligatoire** : pour tout fichier > 100 lignes, `ripgrep` ou `grep -n` d'abord pour localiser, puis `Read` avec `offset` + `limit` (30-50 lignes max). Ne jamais lire un fichier entier si on cherche quelque chose de précis.
+
+**Override** : ces règles s'effacent dès qu'un sujet touche **sécurité, data loss, breaking change, RGPD, migration prod, paiement, PII** — là on détaille à fond, le coût tokens passe au second plan.
+
+**Ce qui ne change pas** : prompts d'agents (`call-tech-lead` round 1/2 reste verbeux par design), commit messages exhaustifs, doc projet (`docs/GUIDE-LLM.md`).
+
+## Délégation aux skills — éviter l'injection inline
+
+Quand un skill ou un agent doit consommer un document long (US, plan, brief, transcript) :
+
+- **À faire** : passer le **chemin absolu** au sous-agent (ex: `Read "/abs/path/to/doc.md"`). Le sous-agent lit lui-même.
+- **À éviter** : interpoler le contenu inline dans le prompt du sous-agent. Sur un run multi-agents, l'injection inline d'un document de 200-500 lignes coûte typiquement **14 à 35 k tokens évitables** (mesuré sur projets réels).
+
+Cette règle vaut pour tous les orchestrateurs (`call-tech-lead`, `call-growth-lead`) et tout skill qui délègue à un agent.
+
+## Compaction et survie contextuelle
+
+Quand le contexte se remplit, Claude Code peut auto-compacter la conversation. Pour éviter qu'une compaction perde des informations critiques en pleine PR :
+
+**Recommandé** : ajouter `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=80` dans `.env.local` (jamais committé) — marge de 20 % pour finir un commit / une PR sans compact en plein milieu.
+
+Quand la compaction se déclenche, **préserver impérativement** les éléments suivants dans le résumé (ordre de priorité) :
+
+### 🔴 Doit survivre (compact = perte = bug grave)
+
+1. **Règles binaires en cours** : workflow git (branche cible des PR, jamais merge sans demande, jamais migration prod exécutée, jamais `--no-verify`/`--amend`/`--force`) — voir la section garde-fous ci-dessous et `docs/GUIDE-LLM.md`.
+2. **Branche git courante + état worktree** : nom de branche, fichiers modifiés non commités, commit en cours d'écriture.
+3. **Décisions prises pendant la session non encore commitées** (choix produit, copy validée, arbitrage technique).
+4. **Liste des fichiers édités** (path absolu) + résumé 1 ligne par fichier de l'intention.
+5. **Numéros de PR / issues** mentionnés — pour le cleanup post-merge.
+6. **Verdicts d'agents `/call-tech-lead`** s'ils ne sont pas écrits dans `.claude/call-tech-lead-runs/`.
+
+### 🟡 Bon à garder (utile mais reconstructible)
+
+- Résultats `ripgrep` / `grep` qui ont guidé une décision (chemin + extrait).
+- Outputs de tests significatifs (échecs — pas les passes).
+- Maquettes / preview choisies parmi N options (option retenue + raison).
+
+### 🟢 Peut être jeté (recompactable)
+
+- Lectures de fichiers entiers ré-accessibles via `Read` ciblé.
+- `git status` / `git log` (toujours rejouables).
+- Brouillons d'agents non retenus.
+- Outputs `Bash` informationnels (ls, cat, head).
+
+### 🚦 Après une compaction, toujours :
+
+1. `git status` + `git branch --show-current` (vérifier où on en est).
+2. `git diff --stat` (vérifier les fichiers édités).
+3. Si commit en cours d'écriture : reconfirmer le contenu staged avant `git commit`.
+4. Si PR en cours : `gh pr view` pour récupérer l'état distant.
+
+## Garde-fous absolus (à adapter par projet)
+
+Ces règles sont des défauts proposés ; affine-les dans `docs/GUIDE-LLM.md` §0 selon ton projet.
+
+- ❌ Pas de push direct sur les branches protégées (`main`, `develop` selon ton workflow). PR obligatoire.
+- ❌ Pas de merge PR sans demande explicite. « Ok pour la PR » ≠ « merge la PR ».
+- ❌ Pas d'exécution de migration prod / paiement / suppression de données sans demande explicite.
+- ❌ Pas de `--no-verify`, `--amend`, `push --force` sans demande explicite.
+- ✅ Branches `feature/*`, `fix/*`, `chore/*`, `docs/*` autorisées.
+
+## Pour aller plus loin
+
+- `OPTIMISATION-TOKENS.md` (à la racine du kit source) — depth, routing, modèles, patterns d'output.
+- `.claude/skills/<skill>/SKILL.md` — détail de chaque skill.
+- `.claude/agents/<agent>.md` — mandat de chaque agent.

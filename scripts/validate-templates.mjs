@@ -1,11 +1,23 @@
 #!/usr/bin/env node
-import { readdir, readFile } from "node:fs/promises";
+import { access, readdir, readFile } from "node:fs/promises";
+import { constants } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const PKG = JSON.parse(await readFile(join(ROOT, "package.json"), "utf8"));
+const KIT_VERSION = PKG.version;
 const failures = [];
+
+async function exists(path) {
+  try {
+    await access(path, constants.F_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
 const expectedCodexModels = {
   "full-stack-lead.toml": ["gpt-5.3-codex", "high"],
   "cso.toml": ["gpt-5.3-codex", "high"],
@@ -92,6 +104,37 @@ async function main() {
       if (source.includes(forbidden)) {
         fail(`${file}: reliquat Claude detecte (${forbidden})`);
       }
+    }
+  }
+
+  // v0.4.0+: kit-managed root files must carry version marker.
+  const markerFiles = [
+    { path: join(ROOT, "templates", "CLAUDE.md.template"), name: "CLAUDE.md" },
+    { path: join(ROOT, "templates", "codex", "AGENTS.md"), name: "AGENTS.md" },
+  ];
+  for (const { path, name } of markerFiles) {
+    if (!await exists(path)) {
+      fail(`${path}: fichier attendu manquant`);
+      continue;
+    }
+    const source = await readFile(path, "utf8");
+    const expected = `<!-- virtual-staff-kit:${name} v${KIT_VERSION} -->`;
+    if (!source.startsWith(expected)) {
+      fail(`${path}: marqueur attendu en tete: ${expected}`);
+    }
+  }
+
+  // Manifest pour la version courante doit exister.
+  const manifestPath = join(ROOT, "scripts", "manifests", `v${KIT_VERSION}.json`);
+  if (!await exists(manifestPath)) {
+    fail(`manifest manquant: ${manifestPath} (lance: npm run generate:manifest -- --version ${KIT_VERSION})`);
+  } else {
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    if (manifest.version !== KIT_VERSION) {
+      fail(`manifest version mismatch: ${manifest.version} vs ${KIT_VERSION}`);
+    }
+    if (!manifest.files || Object.keys(manifest.files).length < 50) {
+      fail(`manifest v${KIT_VERSION}: nombre de fichiers suspect (${Object.keys(manifest.files || {}).length})`);
     }
   }
 

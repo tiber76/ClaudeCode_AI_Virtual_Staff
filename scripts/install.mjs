@@ -144,6 +144,13 @@ async function installClaude(targetRoot, policy, actions) {
   }
 }
 
+async function installRootClaudeMd(targetRoot, policy, actions) {
+  const source = join(TEMPLATES, "CLAUDE.md.template");
+  if (!await exists(source)) return;
+  const target = join(targetRoot, "CLAUDE.md");
+  await copyFileSafe(source, target, policy, actions);
+}
+
 async function installCodex(targetRoot, policy, actions) {
   await copyDirSafe(join(TEMPLATES, "codex", ".agents"), join(targetRoot, ".agents"), policy, actions);
   await copyDirSafe(join(TEMPLATES, "codex", ".codex"), join(targetRoot, ".codex"), policy, actions);
@@ -271,10 +278,24 @@ async function main() {
       throw new Error("--conflicts doit valoir backup, abort ou overwrite");
     }
 
+    const claudeApplicable = provider === "claude" || provider === "both";
+    let withRootClaudeMd = false;
+    if (claudeApplicable) {
+      if (args["with-root-claudemd"]) {
+        withRootClaudeMd = true;
+      } else if (args["no-root-claudemd"]) {
+        withRootClaudeMd = false;
+      } else {
+        const answer = await askChoice(rl, "Installer aussi CLAUDE.md de reference a la racine (token efficiency, compaction)", ["y", "n"], "n");
+        withRootClaudeMd = answer === "y";
+      }
+    }
+
     const actions = [];
     await installCommon(targetRoot, policy, actions);
     if (provider === "claude" || provider === "both") await installClaude(targetRoot, policy, actions);
     if (provider === "codex" || provider === "both") await installCodex(targetRoot, policy, actions);
+    if (withRootClaudeMd) await installRootClaudeMd(targetRoot, policy, actions);
     await updateGitignore(targetRoot, provider, actions);
     await writeAiSetupPrompt(targetRoot, provider, actions);
 

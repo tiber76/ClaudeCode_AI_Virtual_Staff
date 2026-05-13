@@ -31,13 +31,16 @@ Depuis ce depot clone :
 npm run setup
 ```
 
-Le script pose 3 questions :
+Le script pose 4 questions :
 
 | Question | Exemple |
 |---|---|
 | Projet cible | `/Users/me/repos/mon-projet` |
 | Outil a installer | `codex`, `claude` ou `both` |
 | Si un fichier existe deja | `backup`, `abort` ou `overwrite` |
+| Installer aussi `CLAUDE.md` racine (token efficiency, compaction) | `y` / `n` (par defaut `n`) |
+
+La 4eme question n'apparait que si tu installes l'adapter Claude. Le `CLAUDE.md` racine est un preambule auto-charge par Claude Code qui inscrit les regles d'output court, de lecture ciblee et de survie post-compaction. Si ton projet a deja un `CLAUDE.md`, garde-le et reponds `n` ; tu pourras t'inspirer de `templates/CLAUDE.md.template` manuellement.
 
 Le script copie les bons fichiers, renomme les templates, met a jour `.gitignore`, puis cree :
 
@@ -67,6 +70,43 @@ OpenAI Codex : $call-tech-lead "Ajoute une petite feature test" --depth=lean --m
 ```
 
 `--depth=lean` evite de convoquer trop d'agents pour le premier essai.
+
+## Mettre A Jour Un Projet Deja Installe
+
+Si tu as installe le kit dans un projet avec une version anterieure (v0.3.0 par exemple), tu peux recuperer les ajouts de la derniere version sans reinstaller.
+
+### Methode recommandee : script
+
+Depuis le repo du kit clone et mis a jour :
+
+```bash
+# 1. Mets a jour ton clone du kit
+git pull
+
+# 2. Dry-run : affiche le plan, rien n'est ecrit
+node scripts/update.mjs --target /chemin/vers/ton/projet
+
+# 3. Applique si le plan te convient
+node scripts/update.mjs --target /chemin/vers/ton/projet --apply
+```
+
+Le script :
+
+- Detecte automatiquement la version source de ton projet (SHA-256 manifests).
+- Ne touche **jamais** : `docs/GUIDE-LLM.md`, `docs/EQUIPES-LLM.md`, `docs/COUTS-LLM.md`, `.claude/settings.local.json`, `backlog.md`.
+- Backup systematique en `.backup-YYYYMMDD-HHMMSS` avant ecrasement.
+- Sur un fichier customise, demande `[s]kip / [b]ackup+replace / [a]bort` (ou applique `--conflicts backup|skip|abort` en non-interactif).
+- Ecrit un rapport `virtual-staff-update-report.md` a la racine du projet cible.
+
+### Methode alternative : prompt a coller
+
+Si tu n'as pas le kit clone en local, copie le prompt dans `templates/update-prompt.md` et colle-le dans Claude Code ou Codex ouvert a la racine de ton projet. L'AI va recuperer le manifest publie sur GitHub et patcher fichier par fichier.
+
+Cette methode est moins deterministe que le script — privilegie le script si possible.
+
+### Detail
+
+Voir `MIGRATION-v0.4.md` pour le guide pas-a-pas, les options du script, et les questions frequentes.
 
 ## Quel Outil Choisir ?
 
@@ -171,6 +211,10 @@ Utile en script ou CI :
 npm run setup -- --target /chemin/vers/projet --provider claude --conflicts backup
 npm run setup -- --target /chemin/vers/projet --provider codex --conflicts backup
 npm run setup -- --target /chemin/vers/projet --provider both --conflicts backup
+
+# Avec ou sans le CLAUDE.md racine
+npm run setup -- --target ... --provider claude --conflicts backup --with-root-claudemd
+npm run setup -- --target ... --provider claude --conflicts backup --no-root-claudemd
 ```
 
 ### Installation manuelle
@@ -197,7 +241,8 @@ Templates OK
 | Fichier | Usage |
 |---|---|
 | `CHECKLIST-KICKOFF.md` | Checklist d'installation et de verification |
-| `OPTIMISATION-TOKENS.md` | Depth, routing, rounds facultatifs, modeles |
+| `OPTIMISATION-TOKENS.md` | Depth, routing, rounds facultatifs, modeles, patterns d'output, compaction |
+| `MIGRATION-v0.4.md` | Guide de migration v0.3.0 → v0.4.0 |
 | `PORTAGE-CODEX.md` | Mapping Claude Code vers Codex |
 | `ARCHITECTURE.md` | Fonctionnement interne des orchestrateurs |
 | `PATTERNS.md` | Patterns invariants du systeme |
