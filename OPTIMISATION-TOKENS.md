@@ -114,3 +114,62 @@ Au 2026-04-28, l'adapter Codex genere ces defaults :
 - Ne pas relancer un agent au round 2 sans contradiction actionnable.
 - Ecrire les agents exclus dans le routing : la sobriete doit etre auditable.
 - Apres 5-10 runs, relire les transcripts et supprimer les agents rarement utiles.
+
+## Patterns D'Output
+
+Ces regles s'appliquent aux reponses Claude Code / Codex, pas aux prompts internes des agents. Elles sont reprises dans `CLAUDE.md` (Claude) et `AGENTS.md` (Codex) installes a la racine du projet.
+
+**Principe central** : raisonnement profond, output court. La reflexion interne peut etre longue ; la reponse user-facing reste minimale.
+
+- Zero phrase transitoire avant un tool call. Tool call direct.
+- Zero recap narratif apres un tool call evident.
+- Actions multiples → bullet list ultra-courte (`• Fix → fichier.ts`).
+- Fin de reponse : une ligne de statut OU une question directe.
+- Pas de tableaux decoratifs pour 2 items. Tableaux gardes pour ≥3×2.
+- Pas de caveats defensifs sur points evidents.
+- Pas de devinette sur API, version, flag, SHA. Verifier avant d'affirmer.
+- Pas de re-lecture d'un fichier deja lu sans changement.
+- Skip fichiers > 100 KB sauf necessite concrete.
+
+**Override** : ces regles s'effacent des qu'un sujet touche securite, data loss, breaking change, RGPD, migration prod, paiement, PII.
+
+**Ce qui ne change pas** : prompts d'agents `call-tech-lead` round 1/2 (verbeux par design), commit messages exhaustifs, doc projet.
+
+## Lecture Ciblee
+
+Pour tout fichier > 100 lignes, ne jamais le lire entier si on cherche quelque chose de precis :
+
+1. `ripgrep` ou `grep -n` d'abord pour localiser les lignes pertinentes.
+2. `Read` avec `offset` + `limit` (30-50 lignes max).
+3. Etendre la fenetre seulement si la zone lue ne suffit pas.
+
+Gain typique : -60 a -90% de tokens de lecture sur les gros fichiers (config, lock files, docs).
+
+## Delegation Aux Skills
+
+Quand un skill ou un agent doit consommer un document long (US, plan, brief, transcript) :
+
+- **A faire** : passer le **chemin absolu** au sous-agent. Le sous-agent lit lui-meme via son outil de lecture.
+- **A eviter** : interpoler le contenu inline dans le prompt du sous-agent.
+
+Sur un run multi-agents avec un document de 200-500 lignes injecte inline, on observe typiquement **14 a 35 k tokens evitables** par run (compte tous les agents qui recoivent le prompt).
+
+Cette regle vaut pour tous les orchestrateurs (`call-tech-lead`, `call-growth-lead`) et tout skill qui delegue a un agent.
+
+## Compaction Et Survie Contextuelle
+
+Quand le contexte se remplit, le runtime auto-compacte la conversation. Si la compaction tombe en pleine PR ou en plein commit, des informations critiques peuvent etre perdues.
+
+**Recommandation** : si le runtime le supporte (Claude Code), regler le seuil a 80% via `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=80` dans `.env.local`. Marge de 20% pour finir un commit / une PR sans compact en plein milieu.
+
+Quand la compaction se declenche, le resume doit preserver :
+
+| Priorite | A preserver | Raison |
+|---|---|---|
+| 🔴 Doit survivre | Regles binaires en cours, branche git, fichiers edites, decisions business non commitees, numeros de PR, verdicts agents | Perte = bug grave |
+| 🟡 Bon a garder | Resultats `ripgrep` decisifs, echecs de tests, options retenues parmi N | Reconstructible mais couteux |
+| 🟢 Peut etre jete | Lectures de fichiers (re-accessibles), `git status`/`log`, brouillons non retenus, outputs Bash informationnels | Recompactable |
+
+**Apres une compaction**, toujours rejouer : `git status` + `git branch --show-current` + `git diff --stat`. Si commit en cours d'ecriture : reconfirmer le staged avant `git commit`. Si PR en cours : `gh pr view`.
+
+Ce protocole est inscrit dans le `CLAUDE.md` installe par le kit (section "Compaction et survie contextuelle").
