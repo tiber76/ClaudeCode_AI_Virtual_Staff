@@ -68,6 +68,7 @@ if [ "$FIRST" = "{" ]; then
       *) continue ;;
     esac
     { [ -n "$repo_dir" ] && [ -d "$repo_dir" ]; } || repo_dir="${CWD:-$PWD}"
+    protect_base "$repo_dir"
     positional=()
     # shellcheck disable=SC2206
     toks=($args); n=${#toks[@]}; i=0

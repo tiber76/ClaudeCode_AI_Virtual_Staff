@@ -138,7 +138,7 @@ while IFS= read -r f; do
     rm -f "$WT/$f"
   fi
 done <<EOF4
-$( { git -C "$ROOT" -c core.quotePath=false diff --name-only HEAD; git -C "$ROOT" -c core.quotePath=false ls-files -o --exclude-standard; } | sort -u)
+$( { git -C "$ROOT" -c core.quotePath=false diff --no-renames --name-only HEAD; git -C "$ROOT" -c core.quotePath=false ls-files -o --exclude-standard; } | sort -u)
 EOF4
 
 # Dépendances : symlinks vers les dossiers ignorés par git.

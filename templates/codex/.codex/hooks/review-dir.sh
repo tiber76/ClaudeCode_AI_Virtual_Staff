@@ -23,7 +23,10 @@ _HOOKS_SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 # Un placeholder que /setup-project n'a pas remplacé vaut « non réglé » (jamais une valeur littérale).
 _PH='{''{'
 case "${REVIEW_BASE_BRANCH:-}" in *"$_PH"*) unset REVIEW_BASE_BRANCH ;; esac
-case "${FIX_BRANCH_PREFIX:-}" in *"$_PH"*|'') ;; *) FIX_BRANCH_RE="^${FIX_BRANCH_PREFIX}" ;; esac
+# FIX_BRANCH_RE réglé à la main prime ; sinon le préfixe (échappé) le fixe.
+if [ -z "${FIX_BRANCH_RE:-}" ]; then
+  case "${FIX_BRANCH_PREFIX:-}" in *"$_PH"*|'') ;; *) FIX_BRANCH_RE="^$(printf '%s' "$FIX_BRANCH_PREFIX" | sed 's/[.[\*^$()+?{|]/\\&/g')" ;; esac
+fi
 if [ -n "${PROTECTED_BRANCHES+x}" ]; then
   # Retire mot par mot les placeholders non remplacés ; s'il ne reste rien d'un réglage non vide : défaut.
   _pb=""; _had=0
@@ -45,7 +48,10 @@ resolve_base() {
   printf 'develop\n'
 }
 
-: "${PROTECTED_BRANCHES=${REVIEW_BASE_BRANCH:+$REVIEW_BASE_BRANCH }develop main master}"
+# Défaut : la base (réglée, ou résolue par dépôt via protect_base) + develop main master.
+if [ -z "${PROTECTED_BRANCHES+x}" ]; then PROTECTED_BRANCHES="${REVIEW_BASE_BRANCH:+$REVIEW_BASE_BRANCH }develop main master"; _PB_DEFAULT=1; fi
+# protect_base <racine> : avec le défaut, ajoute la base résolue du dépôt (ex. trunk) aux branches protégées.
+protect_base() { [ "${_PB_DEFAULT:-0}" = 1 ] || return 0; local b; b=$(resolve_base "$1"); case " $PROTECTED_BRANCHES " in *" $b "*) ;; *) PROTECTED_BRANCHES="$PROTECTED_BRANCHES $b" ;; esac; }
 : "${REVIEW_DIR:=.codex/reviews}"
 : "${FIX_BRANCH_RE:=^fix/}"
 : "${REVIEW_LIGHT_MAX:=150}"

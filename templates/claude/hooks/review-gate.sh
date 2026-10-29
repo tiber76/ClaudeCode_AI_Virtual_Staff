@@ -164,6 +164,7 @@ check_repo() {
   local dir="$1" ROOT BRANCH SHA REPORT CAUSE
   [ -d "$dir" ] || refuse "dépôt visé « $dir » non résoluble (variable non développée, ~, dossier absent) — la porte ne se rabat jamais sur le dépôt courant : écrire le chemin absolu en clair."
   ROOT=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null) || return 0   # hors dépôt : pas notre affaire
+  protect_base "$ROOT"
   BRANCH=$(git -C "$ROOT" branch --show-current 2>/dev/null || true)
   # Branche protégée : c'est push-target-guard qui juge (la review n'a pas de sens sur la base elle-même).
   if [ -n "$BRANCH" ] && is_protected "$BRANCH"; then return 0; fi
