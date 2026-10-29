@@ -163,9 +163,11 @@ function gitignoreEntries(provider) {
     entries.push(".claude/call-call-tech-lead-runs/");
     entries.push(".claude/call-call-growth-lead-runs/");
     entries.push(".claude/settings.local.json");
+    entries.push(".claude/reviews/");
   }
   if (provider === "codex" || provider === "both") {
     entries.push(".codex/runs/");
+    entries.push(".codex/reviews/");
   }
   return entries;
 }

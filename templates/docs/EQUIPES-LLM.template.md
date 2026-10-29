@@ -21,6 +21,16 @@ Deux équipes d'agents IA spécialisés collaborent sur {{PROJECT_NAME}}, chacun
 | `cso` | Opus | Sécurité §7 — rate-limit, 2FA, CSP, RGPD | Features auth / data sensible / permissions |
 | `data-engineer` | Sonnet | KPI, index DB, agrégations, budget AI | Modélisation data, optim requêtes |
 | `ai-llm-engineer` | Sonnet | Claude/LLM — prompts, parsers, validators | Features IA (si applicable) |
+| `integrateur` | Sonnet | Intégration front d'une maquette validée, réutilise le design system | Maquette validée → code, via `/integre-design` |
+
+### Les agents de mécanique (non convoqués en débat)
+
+| Agent | Modèle | Rôle | Appelé par |
+|---|---|---|---|
+| `full-stack-worker` | Opus | Code une tranche dans un contexte frais (mandat de `full-stack-lead`) | `/call-tech-lead`, une tranche = un worker |
+| `review-finder` | Sonnet | Relit le diff sous un seul angle, ≤ 6 candidats avec scénario d'échec | `/review-pr` (1, 5 ou 8 selon le palier) |
+| `review-verifier` | Sonnet | Rend CONFIRMÉ / PLAUSIBLE / RÉFUTÉ par candidat, ligne citée | `/review-pr` |
+| `pre-mortem-adversaire` | Sonnet | 5-10 edge cases d'un diff sensible, à transformer en tests | `/pre-mortem` |
 
 ### Les skills tech
 
@@ -33,7 +43,14 @@ Deux équipes d'agents IA spécialisés collaborent sur {{PROJECT_NAME}}, chacun
 | `/qa-flow` | Pyramide tests (smoke → critical → full) + correctif itératif | Rapport before/after |
 | `/review-pr` | Code review pré-merge | 🔴 Bloquants / 🟠 À corriger / 🟢 OK |
 | `/security-audit` | Audit sécu périodique | Rapport Critique/Élevé/Moyen/Info |
-| `/ship-pr` | Tests → build → commit → `gh pr create --base develop` | PR URL (ne merge jamais) |
+| `/dev-express <sujet S>` | Voie courte : mêmes garde-fous, sans cérémonie (bascule vers `/call-tech-lead` au moindre signal lourd) | PR ouverte |
+| `/fix-bug <bug S>` | Cause racine, test rouge avant fix, preuve inversée (`fix-proof.sh`) | PR ouverte + preuve |
+| `/verify` | Checklist 8 points avant chaque commit applicatif | Trace `/verify : N/8 ✓` dans le commit |
+| `/pre-mortem` | Edge cases adverses sur un diff sensible | Cas de test à écrire |
+| `/integre-design` | Maquette validée → code propre sans dupliquer | Code + rapport d'intégration |
+| `/ship-pr` | Tests → E2E au niveau calculé ∥ `/review-pr` → build → push → `gh pr create --base {{GIT_DEFAULT_BRANCH}}` | PR URL (ne merge jamais) |
+| `/close-session` | Nettoie worktree + branche si mergée et clean | Verdict « session clean » |
+| `/audit-memory` | Audit du dossier mémoire Claude Code | `docs/audits/AUDIT-MEMORY-<date>.md` |
 | `/retro` | Rétro post-feature/bug | 3 marché / 3 coincé / préventions |
 
 ---
@@ -108,12 +125,16 @@ Détail : [`docs/COUTS-LLM.md`](COUTS-LLM.md).
 | Formaliser une US | `/redige-us` |
 | Plan technique d'une US | `/fullstack-lead-tech` |
 | Feature complète → PR | `/call-tech-lead` |
+| Petit sujet (taille S) | `/dev-express` |
+| Bug de taille S | `/fix-bug` |
+| Avant chaque commit | `/verify` |
 | Debug méthodique | `/investigate-bug` |
 | Tests à corriger | `/qa-flow` |
 | Review pré-merge | `/review-pr` |
 | PR automatisée | `/ship-pr` |
 | Audit sécu | `/security-audit` |
 | Rétro post-feature | `/retro` |
+| Fin de session (worktree) | `/close-session` |
 | --- | --- |
 | Brief campagne | `/redige-brief` |
 | Initiative growth | `/call-growth-lead` |

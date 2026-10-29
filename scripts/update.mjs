@@ -27,6 +27,8 @@ function sourceFor(targetRelPath) {
   if (targetRelPath.startsWith(".claude/agents/")) return join(TEMPLATES, "claude", "agents", targetRelPath.slice(".claude/agents/".length));
   if (targetRelPath.startsWith(".claude/skills/")) return join(TEMPLATES, "claude", "skills", targetRelPath.slice(".claude/skills/".length));
   if (targetRelPath.startsWith(".claude/commands/")) return join(TEMPLATES, "claude", "commands", targetRelPath.slice(".claude/commands/".length));
+  if (targetRelPath.startsWith(".claude/hooks/")) return join(TEMPLATES, "claude", "hooks", targetRelPath.slice(".claude/hooks/".length));
+  if (targetRelPath.startsWith(".codex/hooks/")) return join(TEMPLATES, "codex", ".codex", "hooks", targetRelPath.slice(".codex/hooks/".length));
   if (targetRelPath.startsWith(".agents/skills/")) return join(TEMPLATES, "codex", ".agents", "skills", targetRelPath.slice(".agents/skills/".length));
   if (targetRelPath.startsWith(".codex/agents/")) return join(TEMPLATES, "codex", ".codex", "agents", targetRelPath.slice(".codex/agents/".length));
   if (targetRelPath.startsWith("docs/formats/")) return join(TEMPLATES, "docs", "formats", targetRelPath.slice("docs/formats/".length));

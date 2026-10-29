@@ -24,7 +24,7 @@ triggers:
 # /qa-flow
 
 ## Objectif
-Garantir qu'une feature est testée à tous les niveaux (unit + intégration + E2E) avant d'aller en PR. Diagnostiquer et corriger les échecs sans gaspiller de temps.
+Garantir qu'une feature est testée à tous les niveaux (unit + intégration, + E2E au niveau que calcule `.claude/hooks/e2e-level.sh` : voir `/ship-pr` étape 5) avant d'aller en PR. Diagnostiquer et corriger les échecs sans gaspiller de temps.
 
 ## Quand l'utiliser
 - Une feature est codée, on veut valider avant `/review-pr` et `/ship-pr`.
@@ -33,10 +33,12 @@ Garantir qu'une feature est testée à tous les niveaux (unit + intégration + E
 
 ## Principes
 1. **Pyramide de tests** : unit (rapide) → intégration → E2E smoke → E2E critical → E2E full. Escalader seulement si les précédents passent.
-2. **Ne JAMAIS relancer la suite E2E complète pour fixer 2-3 tests** : `{{CMD_E2E_LAST_FAILED}}` en boucle (cf. §4).
-3. **Diagnostiquer avant de fixer** : lire le test + le source + les logs avant de modifier quoi que ce soit.
-4. **Proposer le fix, ne pas l'appliquer sans validation** — sauf si le bug est trivial (typo, import manquant) ou que l'utilisateur a dit "corrige en autonomie".
-5. **Ne pas contourner un test qui échoue** : si le test révèle un vrai bug, on corrige le code, pas le test.
+2. **Le niveau d'E2E avant PR est calculé, pas jugé** : `aucun`, `specs` ou `smoke` selon `.claude/hooks/e2e-level.sh` (source unique : `/ship-pr` étape 5). Le **nightly rejoue toute la suite et fait foi** : élargir à `critical` ou à la suite complète seulement sur demande de l'utilisateur.
+3. **Runner détaché si le projet en a un** : un job E2E de plusieurs minutes lancé en direct dans la session meurt au kill du harnais, et deux runs simultanés se marchent dessus. Attente en arrière-plan, jamais de `sleep` au premier plan.
+4. **Ne JAMAIS relancer la suite E2E complète pour fixer 2-3 tests** : `{{CMD_E2E_LAST_FAILED}}` en boucle (cf. §4).
+5. **Diagnostiquer avant de fixer** : lire le test + le source + les logs avant de modifier quoi que ce soit.
+6. **Proposer le fix, ne pas l'appliquer sans validation** — sauf si le bug est trivial (typo, import manquant) ou que l'utilisateur a dit "corrige en autonomie".
+7. **Ne pas contourner un test qui échoue** : si le test révèle un vrai bug, on corrige le code, pas le test. Jamais de `test.skip()`, jamais de `.only()` committé, jamais d'entrée de backlog silencieuse à la place d'un correctif. Un test bloquant depuis plus de 30 min : poser le problème à l'utilisateur avec analyse et options.
 
 ## Étapes
 
@@ -60,6 +62,7 @@ Lister les fichiers touchés → identifier les zones à re-tester en priorité.
 ⚠️ Exécution séquentielle (cf. §4) — voir `{{CMD_INT_TEST}}` pour les options projet.
 
 ### 4. E2E Smoke (~30s)
+Quand et quoi se jouer avant PR : le niveau de `/ship-pr` étape 5 (smoke **avec** les specs listés dans le même run, ou les specs seuls, ou aucun). Le smoke seul :
 ```bash
 {{CMD_E2E_SMOKE}}
 ```
@@ -71,10 +74,11 @@ Si ✅ → proposer la suite.
 ```
 Demander à l'utilisateur si on enchaîne sur la suite full avant PR, ou si on s'arrête là.
 
-### 6. E2E Full (~6 min) — obligatoire avant PR
+### 6. E2E Full (~6 min) — sur demande
 ```bash
 {{CMD_E2E_FULL}}
 ```
+Seulement si l'utilisateur l'a demandé. Le périmètre exigé avant PR est celui de `/ship-pr` étape 5 (niveau calculé), pas la suite complète.
 
 ### 7. Boucle de correction
 Si des tests échouent à n'importe quelle étape :
@@ -87,7 +91,7 @@ Si des tests échouent à n'importe quelle étape :
    - Proposer le diagnostic + fix.
 3. Après fix → `{{CMD_E2E_LAST_FAILED}}` (JAMAIS la suite complète pour 2-3 tests).
 4. Répéter jusqu'au vert.
-5. Une fois tout vert avec `--last-failed` → faire UN run complet final pour confirmer qu'aucune autre régression n'est apparue.
+5. Une fois tout vert avec `--last-failed` → faire UN run final du périmètre de départ pour confirmer qu'aucune autre régression n'est apparue. Avant un push, ce run final est le **niveau calculé** de `/ship-pr` étape 5, sur l'arbre committé : un run `--last-failed` ne couvre pas ce niveau.
 
 ### 8. Rapport final
 
@@ -105,7 +109,7 @@ Si des tests échouent à n'importe quelle étape :
 | Intégration | `{{CMD_INT_TEST}}` | ✅ / ❌ | Xs |
 | E2E Smoke | `{{CMD_E2E_SMOKE}}` | ✅ | ~30s |
 | E2E Critical | `{{CMD_E2E_CRITICAL}}` | ✅ | ~3min |
-| E2E Full | `{{CMD_E2E_FULL}}` | ✅ | ~6min |
+| E2E Full | `{{CMD_E2E_FULL}}` | ✅ / non demandé | ~6min |
 
 ## Échecs rencontrés et corrigés
 1. **<nom du test>** — `<fichier>:<ligne>`
@@ -122,7 +126,8 @@ Si des tests échouent à n'importe quelle étape :
 
 ## Anti-patterns à éviter
 - ❌ Relancer la suite E2E complète pour fixer 2-3 tests (très coûteux, cf. §4).
-- ❌ "Commenter" un test qui échoue pour faire passer la CI.
+- ❌ Lancer l'E2E en direct dans la session quand le projet fournit un runner détaché.
+- ❌ "Commenter" ou `test.skip()` un test qui échoue pour faire passer la CI.
 - ❌ Modifier un test pour matcher le nouveau comportement sans vérifier que l'ancien comportement n'était pas le bon.
 - ❌ Passer à l'étape suivante tant qu'une étape amont est rouge.
 - ❌ Mocker en E2E (les E2E doivent tester le vrai flow).

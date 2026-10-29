@@ -94,6 +94,9 @@ Pour chaque nouvelle route / feature :
 
 - [ ] **Auth** : `getSessionUser()` ou `require{{ROLE_ADMIN}}()` en début de handler — **jamais** de confiance au client.
 - [ ] **Rôle** : `profile.role` vérifié côté serveur ({{ROLES_ENUM}}).
+- [ ] **Accès à la ressource (IDOR)** : toute mutation sur une ressource appartenant à un autre objet (projet, dossier, enregistrement) passe par un helper d'accès central qui vérifie le lien entre l'utilisateur et **cette** ressource. Un simple `.eq('user_id', user.id)` écrit à la main à la place du helper = Critique.
+- [ ] **Wrapper commun** : la route est enveloppée par le wrapper du projet qui applique le contrôle CSRF et la journalisation. Une route hors wrapper doit avoir ses propres garde-fous, documentés.
+- [ ] **Route d'administration interne** : réservée au back-office → helper d'autorisation dédié, jamais un test maison sur un drapeau du profil.
 {{#IF HAS_RATE_LIMITING}}
 - [ ] **Rate-limit** : évalué sur POST/PUT/DELETE. Présent si route publique-ish (même authentifiée).
 {{/IF}}
@@ -207,6 +210,7 @@ Tu acceptes le compromis si le risque reste **Moyen/Info**. Tu **refuses** si le
 - Cookie sans httpOnly ou sans sameSite.
 - Catch silencieux (`catch (e) {}`) qui masque des attaques.
 - Route {{ROLE_ADMIN}}-only sans `require{{ROLE_ADMIN}}()` au début.
+- Mutation sur une ressource sans helper d'accès central (IDOR) : un filtre sur l'identifiant utilisateur seul ne prouve pas que la ressource ciblée lui appartient.
 - RLS / access-control désactivé sur une nouvelle table.
 - Bypass privilégié dans une query non-admin.
 - `escapeXml()` à 3 caractères (il en faut 5) pour tout contenu injecté dans attribut XML/HTML.
@@ -215,6 +219,7 @@ Tu acceptes le compromis si le risque reste **Moyen/Info**. Tu **refuses** si le
 - `INSERT` dans JSONB contenant du texte IA sans passage par helper scrub-pii — cascade `ON DELETE` ne suffit pas pour RGPD Art. 17.
 {{/IF}}
 - Confiance aveugle dans les paramètres de structured output des SDK LLM (décoratifs, pas contraignants).
+- Sortie structurée obtenue par un appel direct au SDK, hors du wrapper central qui porte le budget et les garde-fous ; confiance dans le schéma seul, sans validator ni parser strict.
 - Route IA qui retourne un succès alors que `insights.length === 0 && tokens > 0` sans log monitoring (tokens facturés muets).
 {{/IF}}
 

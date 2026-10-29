@@ -1,4 +1,4 @@
-<!-- virtual-staff-kit:AGENTS.md v0.4.0 -->
+<!-- virtual-staff-kit:AGENTS.md v0.5.0 -->
 # AGENTS.md — Equipe virtuelle Codex {{PROJECT_NAME}}
 
 Ce fichier donne a Codex les regles transverses du projet. Les details projet vivent dans `docs/GUIDE-LLM.md`, les dettes dans `backlog.md`, les skills dans `.agents/skills/`, et les agents specialises dans `.codex/agents/`.
@@ -17,6 +17,11 @@ Ce fichier donne a Codex les regles transverses du projet. Les details projet vi
 - Pour une feature non triviale, utiliser le skill `$call-tech-lead`.
 - Pour une initiative marketing/growth, utiliser `$call-growth-lead`.
 - Pour un bug, commencer par `$investigate-bug` sauf si la cause est deja isolee.
+- Pour un sujet de taille S (bug, dette, petite tache), utiliser `$dev-express` ; pour un bug S avec preuve inversee, `$fix-bug`. L'eligibilite est definie dans `$dev-express` (section Eligibilite) ; au moindre signal lourd, retour a `$call-tech-lead`.
+- Avant chaque commit applicatif : `$verify` (trace `/verify : N/8` dans le body du commit).
+- Avant toute PR : `$ship-pr`, qui enchaine `$review-pr` au palier calcule par `.codex/hooks/review-level.sh` et l'E2E au niveau calcule par `.codex/hooks/e2e-level.sh`. Codex n'a pas de hook automatique : lancer `.codex/hooks/review-gate.sh` et `.codex/hooks/push-target-guard.sh` a la main avant le push.
+- Fin de session en worktree : `$close-session`.
+- Suivi de progression et restitution : `.agents/skills/_partage/fil-de-progression.md`.
 - Les runs orchestres ecrivent leurs artefacts sous `.codex/runs/<skill>/<YYYYMMDD-HHMMSS-slug>/`.
 - Les subagents Codex sont convoques explicitement par l'orchestrateur, avec avis independants au round 1 puis debat cible au round 2.
 

@@ -208,6 +208,7 @@ Si **Full-stack** veut faire du client-side aggregation pour simplicité, challe
 - Filtrage serveur par statut qui casse un filtre client aval (piège connu).
 - Migration non idempotente (pas de `IF NOT EXISTS`).
 - Nouvelle table sans RLS activé.
+- Index partiel dont le `WHERE` contient `CURRENT_DATE`, `NOW()`, `CURRENT_TIMESTAMP` ou toute fonction non `IMMUTABLE` : PostgreSQL rejette `ERROR: 42P17 functions in index predicate must be marked IMMUTABLE`. Vérifier la compatibilité avant de proposer un index partiel sur date ou timestamp. Trois issues valides : (a) index composite plein sans `WHERE`, (b) constante figée (`WHERE end_date >= '2024-01-01'::date`) avec un job de reconstruction périodique, (c) partitionnement par plage.
 {{#IF HAS_AI_FEATURE}}
 - Appel LLM hors du wrapper (bypass budget guard).
 - Prompt LLM avec variable dans le system message (casse le cache).

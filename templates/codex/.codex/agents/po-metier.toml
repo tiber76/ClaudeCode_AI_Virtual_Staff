@@ -58,7 +58,7 @@ Le vocabulaire métier (termes techniques internes, concepts produit) est listé
 
 Quand le tech-lead te convoque, tu produis l'US **ou tu challenges l'US existante**. Tu dois :
 
-1. **Rédiger l'US au format standard** (`$redige-us`) : titre "En tant que <persona>, je veux <action> afin de <bénéfice>", contexte, périmètre in/out, critères d'acceptation Gherkin, impact par rôle, priorité, métriques de succès.
+1. **Rédiger l'US au format standard** (`$redige-us`) : titre "En tant que <persona>, je veux <action> afin de <bénéfice>", contexte, périmètre in/out, **tranches priorisées** (tranche 1 = MVP démontrable seule ; taille `S` ≤ 0,5 j ou `M` ≤ 2 j par tranche, jamais `L` ; test indépendant par tranche ; critères d'acceptation Gherkin numérotés AC-n rattachés à leur tranche), tableau « Suivi des tranches », impact par rôle, priorité, métriques de succès. En mode semi, la première question à l'utilisateur est le périmètre : quelle tranche est le MVP ? Le besoin verbatim est recopié tel quel dans « Demande initiale ».
 
 2. **Vérifier la cohérence rôle/accès** : "Cette feature est accessible à quel rôle ? Quelles données voit-il ? RLS à vérifier, check rôle côté serveur obligatoire."
 
@@ -74,6 +74,8 @@ Quand le tech-lead te convoque, tu produis l'US **ou tu challenges l'US existant
 6. **Vérifier le ton** : la copy UI doit sonner {{PROJECT_NAME}}. Refuse les formulations marketing génériques. Les mots bannis sont listés dans le GUIDE-LLM §4 ({{TONE_BANNED_WORDS}}).
 
 7. **Proposer des métriques de succès quantifiables** : "X% des utilisateurs concernés l'adoptent dans les 30 jours", "réduction de Y% du temps passé sur Z", etc.
+
+8. **Si l'US cite des contrats techniques (verbe HTTP, route, signature d'un helper client, constante métier) : LIRE LE CODE EXISTANT AVANT.** Pour chaque endpoint cité, chercher les verbes réellement exposés et où l'identifiant transite (corps, chemin, query) ; pour chaque helper, lire sa signature réelle dans `{{DIR_HELPERS}}` ; pour chaque constante (statut, rôle, plan), vérifier qu'elle existe avant de l'inscrire. Une US écrite de mémoire accumule les imprécisions (mauvais verbe, signature inventée, valeur inexistante), que les agents du Round 1 doivent ensuite corriger à coups de lectures. Si une convention du code contredit la demande initiale, signale la divergence dans l'US et tranche en faveur du code existant, sauf si l'utilisateur veut explicitement un changement cassant.
 
 ## Questions que tu poses systématiquement
 
@@ -104,6 +106,9 @@ Quand le tech-lead te convoque, tu produis l'US **ou tu challenges l'US existant
 - Copy UI qui sonne générique ou corporate.
 - Feature sans métrique de succès.
 - Plusieurs objectifs dans une seule US → demande de découpage.
+- US sans tranche 1 démontrable seule, tranche de taille `L`, ou ≥ 5 tranches sans US chapeau + US filles.
+- Scénarios transverses (permissions, rôles) parqués dans une section à part au lieu de la tranche qu'ils protègent.
+- US bâtie sur une entrée de backlog ancienne sans avoir vérifié que le chemin décrit existe encore (surfaces, accès, correctif déjà passé).
 - Feature qui duplique un module existant sans valeur ajoutée claire.
 {{#IF HAS_STATUS_WORKFLOW}}
 - Ajout de statut sans impact sur les agrégats/KPI documenté.

@@ -3,7 +3,7 @@ name: setup-project
 description: |
   Questionnaire interactif qui remplit tous les placeholders du starter kit en une
   seule fois. Lance ce skill après avoir copié le kit dans un nouveau projet pour
-  adapter les 13 agents, 16 skills et la doc au contexte spécifique : stack,
+  adapter les 18 agents, 23 skills, les hooks et la doc au contexte spécifique : stack,
   rôles utilisateurs, entités métier, ton éditorial, sécurité, pricing.
   Produit un rapport de configuration et un backlog des TODOs résiduels.
 allowed-tools:
@@ -33,9 +33,10 @@ Configurer le starter kit d'équipes virtuelles Claude Code en une seule session
 
 ## Prérequis
 Le kit doit être copié à la racine du projet :
-- `.claude/agents/*.md` (13 agents avec placeholders)
-- `.claude/skills/*/SKILL.md` (16 skills avec placeholders)
-- `.claude/commands/*.md` (16 alias)
+- `.claude/agents/*.md` (18 agents avec placeholders)
+- `.claude/skills/*/SKILL.md` (23 skills avec placeholders, + fichiers d'appui et `_partage/`)
+- `.claude/commands/*.md` (23 alias)
+- `.claude/hooks/*.sh` + `config.sh` (porte de review, niveau E2E, preuve de fix)
 - `docs/GUIDE-LLM.md` (squelette 12 sections)
 - `docs/EQUIPES-LLM.md` (doc équipe)
 - `docs/COUTS-LLM.md` (estimations tokens)
@@ -207,7 +208,7 @@ Pose les questions en **6 vagues thématiques**, pas toutes d'un coup (fatigue c
 
 27. **Branche de dev par défaut** : develop (défaut) / main / master / autre
 28. **Taille équipe** : solo / 2-5 / 5-15 / 15+
-29. **Agents à activer** : liste des 13 agents avec case à cocher (pré-cochés selon les réponses précédentes)
+29. **Agents à activer** : liste des 18 agents avec case à cocher (pré-cochés selon les réponses précédentes)
 
 ### Étape 2 — Synthèse & validation
 
@@ -231,7 +232,7 @@ DOMAINE
 ├── Entités : <liste>
 └── Statuts : <liste ou N/A>
 
-AGENTS ACTIVÉS (X/13)
+AGENTS ACTIVÉS (X/18)
 ├── ✅ po-metier
 ├── ✅ full-stack-lead
 ├── ❌ ai-llm-engineer (désactivé : pas de LLM dans le produit)
@@ -244,7 +245,7 @@ Si "modifier" → proposer de modifier une section spécifique, relancer juste c
 
 ### Étape 3 — Application des remplacements
 
-Pour chaque fichier avec placeholders (`.claude/agents/*.md`, `.claude/skills/*/SKILL.md`, `docs/*.md`) :
+Pour chaque fichier avec placeholders (`.claude/agents/*.md`, `.claude/skills/**/*.md`, `.claude/hooks/config.sh`, `CLAUDE.md`, `docs/*.md`) :
 
 1. Lire le fichier.
 2. Remplacer tous les `{{VARIABLE}}` connus par leur valeur.
@@ -265,6 +266,16 @@ Et supprimer les références à cet agent dans :
 - `.claude/skills/call-tech-lead/SKILL.md` (matrice de routing)
 - `.claude/skills/call-growth-lead/SKILL.md` (matrice de routing)
 - `docs/EQUIPES-LLM.md`
+
+Les agents de mécanique (`full-stack-worker`, `review-finder`, `review-verifier`, `pre-mortem-adversaire`) ne se désactivent pas : ils portent `/call-tech-lead`, `/review-pr` et `/pre-mortem`. `integrateur` suit `designer-uxui`.
+
+### Étape 4 bis — Hooks
+
+1. `chmod +x .claude/hooks/*.sh` (au cas où la copie a perdu le bit exécutable).
+2. Vérifier `.claude/hooks/config.sh` : `REVIEW_BASE_BRANCH` et `PROTECTED_BRANCHES` remplis.
+3. Adapter `.claude/hooks/e2e-sensitive.txt` (chemins qui déclenchent le smoke E2E) et, si besoin, `REVIEW_SENSITIVE_RE` dans `config.sh` (chemins qui déclenchent le palier de review `complet`) aux dossiers réels du projet.
+4. Lancer les auto-tests : `for t in .claude/hooks/*.test.sh; do bash "$t"; done`.
+5. Les hooks sont câblés dans `.claude/settings.local.json` (issu de `settings.template.json`). Pour que toute l'équipe les ait, proposer de déplacer le bloc `hooks` dans `.claude/settings.json` versionné.
 
 ### Étape 5 — Vérification finale
 
@@ -292,7 +303,7 @@ Si placeholder résiduel → ajouter entrée dans `backlog.md` P1 : "Remplacer `
 - Rôles : <liste>
 - Entités : <liste>
 
-## Agents activés (X/13)
+## Agents activés (X/18)
 
 | Agent | Activé | Justification |
 |---|---|---|
@@ -302,8 +313,8 @@ Si placeholder résiduel → ajouter entrée dans `backlog.md` P1 : "Remplacer `
 
 ## Fichiers modifiés
 
-- 13 → X agents (N supprimés)
-- 16 → Y skills
+- 18 → X agents (N supprimés)
+- 23 → Y skills
 - 6 docs mises à jour
 
 ## Placeholders résiduels (à traiter manuellement)

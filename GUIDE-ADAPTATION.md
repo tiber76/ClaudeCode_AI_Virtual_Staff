@@ -13,8 +13,8 @@ Le skill `/setup-project` remplit automatiquement les placeholders via un questi
 ```
 
 Le skill pose ~30 questions en 6 vagues (identité, stack, intégrations, domaine, ton, git/équipe), puis remplit tous les placeholders `{{VARIABLE}}` dans :
-- Les 13 agents `.claude/agents/*.md`
-- Les 16 skills `.claude/skills/*/SKILL.md`
+- Les 18 agents `.claude/agents/*.md`
+- Les 23 skills `.claude/skills/*/SKILL.md` et les hooks `.claude/hooks/`
 - `docs/GUIDE-LLM.md` (squelette 12 sections)
 - `docs/EQUIPES-LLM.md`
 - `backlog.md`
@@ -69,7 +69,7 @@ Chaque entrée doit :
 
 ### 3. Personnaliser les agents pour ton domaine
 
-Les 13 agents sont volontairement **agnostiques domaine** — ils parlent de rôles, d'entités, de stack avec des placeholders. Pour qu'ils soient vraiment pertinents sur ton projet, tu peux ajouter des sections spécifiques :
+Les 18 agents sont volontairement **agnostiques domaine** — ils parlent de rôles, d'entités, de stack avec des placeholders. Pour qu'ils soient vraiment pertinents sur ton projet, tu peux ajouter des sections spécifiques :
 
 **Dans `.claude/agents/po-metier.md`**, après `/setup-project` :
 - Ajoute une section "Modules / features actuels" avec les pages/modules clés de ton produit
@@ -93,7 +93,7 @@ Les 13 agents sont volontairement **agnostiques domaine** — ils parlent de rô
 
 ### 4. Ajouter un agent spécifique à ton domaine
 
-Si ton projet a une dimension particulière non couverte par les 13 agents standard, crée-en un nouveau.
+Si ton projet a une dimension particulière non couverte par les 18 agents standard, crée-en un nouveau.
 
 Exemples réalistes :
 - `mobile-ios-lead.md` — expert Swift/SwiftUI + App Store + certificats
@@ -171,7 +171,7 @@ Ne cherche pas à tout configurer parfaitement dès le jour 1. Itère :
 ## Erreurs fréquentes à l'adaptation
 
 ### 1. Vouloir tout garder
-Tentation de garder les 13 agents "au cas où". Résultat : orchestrateur confus, tokens brûlés. **Supprime agressivement** ce qui ne sert pas à ton projet.
+Tentation de garder les 18 agents "au cas où". Résultat : orchestrateur confus, tokens brûlés. **Supprime agressivement** ce qui ne sert pas à ton projet.
 
 ### 2. Sous-spécifier le domaine
 Si `po-metier.md` ne contient pas les rôles et entités **spécifiques** à ton produit, il rédige des US génériques inutiles. Prends 30 min pour bien le remplir après `/setup-project`.

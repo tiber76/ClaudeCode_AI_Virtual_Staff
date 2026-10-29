@@ -27,5 +27,24 @@
   },
   "env": {
     "DEBUG": "false"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 15,
+            "command": "if [ -x \"$CLAUDE_PROJECT_DIR/.claude/hooks/review-gate.sh\" ]; then exec \"$CLAUDE_PROJECT_DIR/.claude/hooks/review-gate.sh\"; fi"
+          },
+          {
+            "type": "command",
+            "timeout": 15,
+            "command": "if [ -x \"$CLAUDE_PROJECT_DIR/.claude/hooks/push-target-guard.sh\" ]; then exec \"$CLAUDE_PROJECT_DIR/.claude/hooks/push-target-guard.sh\"; fi"
+          }
+        ]
+      }
+    ]
   }
 }

@@ -6,6 +6,50 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/). Versionning [S
 
 ---
 
+## [0.5.0] — 2026-10-29
+
+Cette release porte dans le kit public cinq mois de rodage sur un projet privé en production : une voie courte pour les petits sujets, une porte de review mécanique avant chaque push, une review en pipeline chercheurs / vérificateurs, et un `call-tech-lead` découpé en tranches portées chacune par un contexte frais.
+
+### Added
+
+- **7 skills** (+ commandes slash) :
+  - `dev-express` — voie courte pour un sujet de taille S (bug, dette, tâche, outillage) : mêmes garde-fous, sans US ni rounds ; section « Éligibilité » qui renvoie à `/call-tech-lead` au moindre signal lourd.
+  - `fix-bug` — profil bug de `dev-express` : cause racine d'abord, test de reproduction rouge avant le fix, **preuve inversée mécanique** (`fix-proof.sh`), angle « altitude » en review, audit des E2E du parcours (pourquoi étaient-ils verts ?).
+  - `verify` — checklist 8 points avant chaque commit applicatif, trace `/verify : N/8 ✓` dans le body du commit.
+  - `pre-mortem` — pensée adversaire sur un diff sensible (path-gating configurable), 5-10 edge cases à transformer en tests.
+  - `close-session` — clôture d'une session en worktree : supprime worktree et branche seulement si mergée et clean, verdict « session clean » ou liste des restes.
+  - `audit-memory` — audit du dossier mémoire Claude Code (doublons, orphelins, obsolètes, budget de `MEMORY.md`), sans action destructive.
+  - `integre-design` — maquette validée → code propre qui réutilise le design system sans dupliquer.
+- **Fichiers partagés** `skills/_partage/` : `fil-de-progression.md` (plan de route, lignes `▶/✓ Étape N/M`, blocs `🟥/🟧 À TOI`, restitution sans jargon, demande de validation) et `test-manuel-local.md` (l'agent joue lui-même le parcours dans un vrai navigateur).
+- **5 agents** : `full-stack-worker` (une tranche = un worker frais), `review-finder` et `review-verifier` (pipeline de review), `pre-mortem-adversaire`, `integrateur`.
+- **Hooks Claude Code** `templates/claude/hooks/` (câblés dans `settings.template.json`) :
+  - `review-gate.sh` — bloque `git push` / `gh pr create` sans rapport `.claude/reviews/<sha HEAD>.md` au palier calculé ; sur `fix/*`, exige aussi la preuve inversée. Bypass `SKIP-review-pr` dans le body du commit, sur instruction humaine.
+  - `review-level.sh` — palier de review depuis le diff : `docs` (1 chercheur), `leger` (5), `complet` (8).
+  - `push-target-guard.sh` — refuse un push direct sur les branches protégées.
+  - `e2e-level.sh` + `e2e-sensitive.txt` — niveau d'E2E avant PR (`aucun` / `specs` / `smoke`), calculé, jamais jugé ; le nightly fait foi.
+  - `fix-proof.sh` — rejoue le test sans le fix dans un worktree temporaire (l'arbre réel n'est jamais touché).
+  - `config.sh` — branches de base et protégées (placeholders remplis par `/setup-project`) ; auto-tests `*.test.sh`.
+- Adapter Codex : les mêmes scripts dans `.codex/hooks/` (lancés par les skills, Codex n'ayant pas de hook automatique) ; fichiers d'appui des skills et `_partage/` désormais générés.
+- `MIGRATION-v0.5.md`, manifest `scripts/manifests/v0.5.0.json`.
+
+### Changed
+
+- **`call-tech-lead`** refondu : `SKILL.md` court + `phases.md`, `rounds.md`, `transcript-format.md`. Intake qui bascule vers `/dev-express` pour un sujet S, découpe en tranches, un worker frais par tranche, review (`/review-pr`) et PR jouées par l'orchestrateur, Tn+1 seulement après merge de Tn. `--depth` et round 2 facultatif conservés.
+- **`review-pr`** refondu en pipeline : palier calculé, chercheurs indépendants par angle (`angles.md`), un vérificateur par candidat (CONFIRMÉ / PLAUSIBLE / RÉFUTÉ, ligne citée), ≤ 10 findings détaillés, rapport 🔴/🟠/🟢 qui sert de preuve à la porte.
+- **`ship-pr`** : E2E au niveau calculé joué en parallèle de `/review-pr` sur le commit qui part, zéro dette (🔴 et 🟠 bloquent, corrections sans question), trace `/verify` exigée, PR vers `{{GIT_DEFAULT_BRANCH}}` (plus de `develop` en dur).
+- `investigate-bug` (règle des 3 tentatives, comparaison avec l'analogue qui marche, diagnostic validé dans le chat), `qa-flow`, `retro`, `redige-us` (tranches priorisées, tranche 1 = MVP), `fullstack-lead-tech` (matrice de traçabilité critère → lot → test, découpe par tranche), `setup-project` (hooks, nouveaux agents).
+- Agents `full-stack-lead`, `po-metier`, `qa`, `designer-uxui`, `cso`, `data-engineer`, `ai-llm-engineer` : règles génériques éprouvées (TDD sanctionné, mode worker, niveaux E2E…).
+- `CLAUDE.md.template` : quelle voie choisir, porte de review, discipline TDD (qualité du RED, sanction), recevoir une review sans acquiescement réflexe, test manuel local, restitution en 5 questions, fil de progression, « une PR = un contexte frais ».
+- `scripts/generate-codex-templates.mjs` : ne régénère plus `AGENTS.md` (maintenu à la main depuis la v0.4.0), réécriture des commandes slash robuste aux chemins (`.claude/skills/verify/` n'est plus touché).
+- `scripts/validate-templates.mjs` : 18 agents / 23 skills, une commande par skill, hooks exécutables et syntaxe bash valide.
+- `install.mjs` : `.claude/reviews/` et `.codex/reviews/` ajoutés au `.gitignore`.
+
+### Migration depuis 0.4.0
+
+`node scripts/update.mjs --target <projet>` puis `--apply` : voir `MIGRATION-v0.5.md`.
+
+---
+
 ## [0.4.0] — 2026-05-13
 
 Cette release porte dans le kit publique les optimisations tokens éprouvées sur un projet privé en production. Elle introduit aussi un mécanisme d'update pour patcher les projets déjà installés en v0.3.0 sans écraser le travail utilisateur.

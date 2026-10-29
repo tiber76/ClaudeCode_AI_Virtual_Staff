@@ -73,7 +73,7 @@ OpenAI Codex : $call-tech-lead "Ajoute une petite feature test" --depth=lean --m
 
 ## Mettre A Jour Un Projet Deja Installe
 
-Si tu as installe le kit dans un projet avec une version anterieure (v0.3.0 par exemple), tu peux recuperer les ajouts de la derniere version sans reinstaller.
+Si tu as installe le kit dans un projet avec une version anterieure (v0.3.0 ou v0.4.0), tu peux recuperer les ajouts de la derniere version sans reinstaller.
 
 ### Methode recommandee : script
 
@@ -106,7 +106,7 @@ Cette methode est moins deterministe que le script — privilegie le script si p
 
 ### Detail
 
-Voir `MIGRATION-v0.4.md` pour le guide pas-a-pas, les options du script, et les questions frequentes.
+Voir `MIGRATION-v0.5.md` (et `MIGRATION-v0.4.md` depuis la v0.3.0) pour le guide pas-a-pas, les options du script, et les questions frequentes.
 
 ## Quel Outil Choisir ?
 
@@ -121,22 +121,40 @@ Voir `MIGRATION-v0.4.md` pour le guide pas-a-pas, les options du script, et les 
 
 ### Agents
 
-13 agents specialises :
+18 agents specialises :
 
-- Tech : `po-metier`, `full-stack-lead`, `designer-uxui`, `qa`, `cso`, `data-engineer`, `ai-llm-engineer`.
+- Tech : `po-metier`, `full-stack-lead`, `designer-uxui`, `integrateur`, `qa`, `cso`, `data-engineer`, `ai-llm-engineer`.
+- Mecanique : `full-stack-worker` (une tranche = un worker frais), `review-finder` et `review-verifier` (pipeline de review), `pre-mortem-adversaire` (edge cases avant commit).
 - Growth : `growth-lead`, `sales-b2b`, `customer-success`, `copywriter-brand`, `content-seo`, `marketing-analytics`.
 
 ### Skills
 
-16 skills :
+23 skills :
 
 | Famille | Skills |
 |---|---|
 | Setup | `setup-project` |
 | Orchestration | `call-tech-lead`, `call-growth-lead` |
-| Tech | `redige-us`, `fullstack-lead-tech`, `investigate-bug`, `review-pr`, `qa-flow`, `ship-pr`, `security-audit` |
+| Voie courte | `dev-express` (sujet de taille S), `fix-bug` (bug S avec preuve inversee) |
+| Tech | `redige-us`, `fullstack-lead-tech`, `investigate-bug`, `integre-design`, `review-pr`, `qa-flow`, `verify`, `pre-mortem`, `ship-pr`, `security-audit` |
 | Growth | `redige-brief`, `ship-landing`, `audit-funnel`, `brief-demo`, `retro-campagne` |
-| Transverse | `retro` |
+| Transverse | `retro`, `close-session`, `audit-memory` |
+
+Plus `_partage/` (fil de progression, test manuel local), lus par les skills.
+
+### Hooks (Claude Code)
+
+`.claude/hooks/`, cables dans `settings.local.json` :
+
+| Hook | Role |
+|---|---|
+| `review-gate.sh` | bloque `git push` / `gh pr create` sans rapport `/review-pr` pour le commit HEAD, au palier calcule |
+| `review-level.sh` | calcule le palier de review depuis le diff : `docs` (1 chercheur), `leger` (5), `complet` (8) |
+| `push-target-guard.sh` | refuse un push direct sur les branches protegees |
+| `e2e-level.sh` | niveau d'E2E avant PR depuis le diff : `aucun`, `specs`, `smoke` (jamais juge par l'agent) |
+| `fix-proof.sh` | preuve inversee d'un fix : le test echoue sans le fix, passe avec |
+
+Reglages dans `.claude/hooks/config.sh` (branches) et `e2e-sensitive.txt` (chemins sensibles). Bypass de la porte : `SKIP-review-pr` dans le body du commit, sur instruction humaine uniquement. Cote Codex, les memes scripts sont copies dans `.codex/hooks/` et lances par les skills.
 
 ### Documentation Projet
 
@@ -163,7 +181,16 @@ Pour une initiative growth :
 $call-growth-lead "..." --depth=standard --mode=semi
 ```
 
-Pour une tache courte, commence par `--depth=lean`. Pour une decision critique, utilise `--depth=full`.
+Pour un petit sujet (bug, dette, tache de taille S) :
+
+```text
+/dev-express "..."      # voie courte, memes garde-fous, sans ceremonie
+/fix-bug "..."          # bug S : cause racine, test rouge, preuve inversee
+```
+
+Le cycle standard d'un dev : TDD → `/verify` avant chaque commit applicatif → `/ship-pr` (tests, E2E au niveau calcule, `/review-pr` en parallele, zero dette, PR) → merge sur ordre humain → `/close-session`.
+
+Pour une tache courte en orchestration, commence par `--depth=lean`. Pour une decision critique, utilise `--depth=full`.
 
 Apres une feature non triviale, lance une retro :
 
@@ -242,6 +269,7 @@ Templates OK
 |---|---|
 | `CHECKLIST-KICKOFF.md` | Checklist d'installation et de verification |
 | `OPTIMISATION-TOKENS.md` | Depth, routing, rounds facultatifs, modeles, patterns d'output, compaction |
+| `MIGRATION-v0.5.md` | Guide de migration v0.4.0 → v0.5.0 |
 | `MIGRATION-v0.4.md` | Guide de migration v0.3.0 → v0.4.0 |
 | `PORTAGE-CODEX.md` | Mapping Claude Code vers Codex |
 | `ARCHITECTURE.md` | Fonctionnement interne des orchestrateurs |
