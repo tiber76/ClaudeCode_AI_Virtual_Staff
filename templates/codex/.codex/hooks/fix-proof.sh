@@ -85,7 +85,7 @@ $f"
 done
 
 HEAD_SHA="$(git rev-parse HEAD 2>/dev/null)" || stop "STOP-BASE : dépôt sans commit"
-HEAD7="$(git rev-parse --short=7 HEAD)"
+HEAD7="${HEAD_SHA:0:7}"   # même découpe que review-gate.sh (jamais --short, qui s'allonge si ambigu)
 
 # Le fix est-il non commité ? (un des fichiers modifié, non suivi ou supprimé dans l'arbre de travail)
 DIRTY=0
@@ -128,7 +128,7 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 git -C "$ROOT" worktree add --detach "$WT" "$HEAD_SHA" >/dev/null 2>&1 || stop "STOP-WORKTREE : git worktree add a échoué"
 
-# Superpose l'état courant de l'arbre de travail (modifs, fichiers neufs, suppressions) sur le worktree.
+# Superpose l'état courant (modifs indexées ou non, fichiers neufs, suppressions) sur le worktree.
 while IFS= read -r f; do
   [ -n "$f" ] || continue
   if [ -e "$ROOT/$f" ] && [ ! -d "$ROOT/$f" ]; then
@@ -138,7 +138,7 @@ while IFS= read -r f; do
     rm -f "$WT/$f"
   fi
 done <<EOF4
-$(git -C "$ROOT" ls-files -m -o -d --exclude-standard | sort -u)
+$( { git -C "$ROOT" -c core.quotePath=false diff --name-only HEAD; git -C "$ROOT" -c core.quotePath=false ls-files -o --exclude-standard; } | sort -u)
 EOF4
 
 # Dépendances : symlinks vers les dossiers ignorés par git.

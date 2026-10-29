@@ -250,7 +250,15 @@ async function writeCodexHooks() {
     const sourcePath = join(sourceDir, entry.name);
     const targetPath = join(targetDir, entry.name);
     const source = await readFile(sourcePath, "utf8");
-    await writeFile(targetPath, source.replaceAll(".claude/", ".codex/").replaceAll("CLAUDE_PROJECT_DIR", "CODEX_PROJECT_DIR"), "utf8");
+    // Côté Codex, les procédures (skills) vivent sous .agents/skills/ et la config sous .codex/config.toml :
+    // les regex de chemins sensibles des hooks suivent, avant la substitution générale .claude/ → .codex/.
+    await writeFile(targetPath, source
+      .replaceAll(".claude/skills/", ".agents/skills/")
+      .replaceAll("\\.claude/(agents/|skills/review-pr/)", "\\.(codex/agents/|agents/skills/review-pr/)")
+      .replaceAll("\\.claude/(settings[^/]*\\.json$|agents/|hooks/|skills/review-pr/)", "\\.(codex/(config\\.toml$|agents/|hooks/)|agents/skills/review-pr/)")
+      .replaceAll(".claude/", ".codex/")
+      .replaceAll("\\.claude/", "\\.codex/")
+      .replaceAll("CLAUDE_PROJECT_DIR", "CODEX_PROJECT_DIR"), "utf8");
     await chmod(targetPath, (await stat(sourcePath)).mode);
   }
 }

@@ -134,8 +134,8 @@ interroge toi-même le graphe s'il est disponible :
 Angle D — nettoyage. Quatre questions sur le code AJOUTÉ par le diff, jamais sur
 l'existant :
 1. Réutilisation : ce code ré-implémente-t-il quelque chose que le dépôt a déjà ?
-   rg dans `{{DIR_HELPERS}}`, les fichiers voisins du changement et le catalogue
-   des helpers du projet (docs/GUIDE-LLM.md) ; la liste des helpers similaires
+   rg dans `{{DIR_HELPERS}}`, les fichiers voisins du changement et les helpers
+   existants du projet (`{{DIR_HELPERS}}`) ; la liste des helpers similaires
    ci-dessous, si le graphe était disponible. Nomme le helper existant à appeler.
 2. Simplification : état redondant ou dérivable, copier-coller avec légère
    variation, imbrication profonde, code mort laissé derrière, paramètre booléen
@@ -254,7 +254,9 @@ chemins sensibles sont ceux de l'en-tête. Lis d'abord la section sécurité (§
   externes (pollution de prototype) ; nouvelle requête vers un domaine externe sans
   mise à jour de la politique de sécurité du contenu (CSP, si le projet en a une) ;
   envoi de fichier sans contrôle du type réel, de l'extension et de la taille.
-- Données personnelles (si le projet y est soumis) : minimisation, pas d'export
+- Handlers inline (`onclick=`, `onchange=`… dans le HTML ou JSX client) si le projet a une CSP à nonce : bloqués par la CSP en production → 🔴.
+{{#IF HAS_2FA}}- Parcours sensibles (changement d'e-mail, suppression de compte, admin) protégés par 2FA.
+{{/IF}}- Données personnelles (si le projet y est soumis) : minimisation, pas d'export
   silencieux, journaux sans identifiant direct.
 - Échecs silencieux : `catch` vide ou générique sans log ni signal, requête dont
   l'erreur n'est pas capturée, `.catch(() => {})`, valeur par défaut renvoyée sur
@@ -272,8 +274,8 @@ Angle H — pièges connus. Deux sources, dans cet ordre.
 1. Résultat de l'outil de détection des anti-patterns du projet, s'il existe
    (script de lint des helpers canoniques ou équivalent), fourni ci-dessous. Chaque
    hit sur une ligne du diff est un candidat. Si le diff touche un chemin sensible :
-   vérifie qu'aucune implémentation locale ne ré-écrit un helper du catalogue de
-   `docs/GUIDE-LLM.md`.
+   vérifie qu'aucune implémentation locale ne ré-écrit un helper existant du projet
+   (`{{DIR_HELPERS}}`).
 2. `docs/GUIDE-LLM.md` § « Pièges connus » (§12) : lis l'index en tête de section,
    repère les thèmes que le diff touche et lis les entrées correspondantes avant
    de juger. Un piège marqué bloquant dans le guide est 🔴 ; les autres 🟠. Vérifie

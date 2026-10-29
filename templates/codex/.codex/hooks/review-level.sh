@@ -12,7 +12,7 @@
 #   review-level.sh --sensitive                       → la regex des chemins sensibles
 #   review-level.sh --files <racine> [base] [head]    → une ligne « <classe><TAB><chemin> » par fichier du diff,
 #                                                        classe ∈ sensible | doc | test | nonapp | lock | app
-# base par défaut : origin/<REVIEW_BASE_BRANCH> ; head par défaut : HEAD. Le diff est celui de la PR
+# base par défaut : origin/<branche de base> (resolve_base, review-dir.sh) ; head par défaut : HEAD. Le diff est celui de la PR
 # (base...head) : le palier mesure le risque de ce qui part, pas du dernier commit.
 #
 # Paliers :
@@ -23,7 +23,7 @@
 #   complet — tout le reste : les 8 angles. Un seul chemin sensible suffit.
 #
 # Ordre d'évaluation d'un chemin (il compte) :
-#   1. la procédure de review et les agents (.codex/agents/, .codex/skills/review-pr/) → sensible,
+#   1. la procédure de review et les agents (.codex/agents/, .agents/skills/review-pr/) → sensible,
 #      même en Markdown : ils fixent les outils des sous-agents et la procédure elle-même ;
 #   2. texte pur → doc ; 3. test ; 4. sensible ; 5. non applicatif ; 6. verrou ; 7. applicatif.
 # Réglages : voir review-dir.sh (config.sh optionnel).
@@ -32,7 +32,7 @@ unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX GIT_COMMON_DIR
 
 . "$(cd "$(dirname "$0")" && pwd)/review-dir.sh"
 
-PROC_RE='^\.codex/(agents/|skills/review-pr/)'
+PROC_RE='^\.(codex/agents/|agents/skills/review-pr/)'
 LOCKFILE_RE='(^|/)(pnpm-lock\.yaml|package-lock\.json|yarn\.lock|Cargo\.lock|poetry\.lock|composer\.lock|Gemfile\.lock|go\.sum)$'
 NONCANON_RE='^"|(^|/)\.\.?(/|$)|//'
 
@@ -63,7 +63,7 @@ case "${1:-}" in
 esac
 MODE="${MODE:-palier}"
 
-ROOT="$1"; BASE="${2:-origin/$REVIEW_BASE_BRANCH}"; HEAD_REF="${3:-HEAD}"
+ROOT="$1"; BASE="${2:-origin/$(resolve_base "$ROOT")}"; HEAD_REF="${3:-HEAD}"
 git -C "$ROOT" rev-parse --verify -q "$BASE" >/dev/null || { echo "review-level : base introuvable : $BASE (dépôt $ROOT)" >&2; exit 1; }
 git -C "$ROOT" rev-parse --verify -q "$HEAD_REF" >/dev/null || { echo "review-level : head introuvable : $HEAD_REF" >&2; exit 1; }
 

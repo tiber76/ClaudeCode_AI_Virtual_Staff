@@ -244,7 +244,7 @@ Pour chaque lot : test rouge (écrit par le dev) → code minimal → refactor �
    - **T1.e2e** (QA, lot final de la PR) + **point de contrôle « démontrable »** : le test indépendant de la tranche passe. Une PR peut s'arrêter ici.
 2. **Tranche 2** : même séquence. Puis tranche 3, etc.
 3. **Lot final de chaque PR — QA** : relit la couverture du dev et écrit les E2E des tranches embarquées.
-4. `/review-pr`, puis `/qa-flow`, puis `/ship-pr`.
+4. `/qa-flow`, puis `/ship-pr` (qui enchaîne `/review-pr` lui-même ; `/review-pr` reste invocable seul pour auto-challenger un diff).
 
 ---
 
@@ -319,7 +319,7 @@ Terminer par :
 > **Prochaines étapes** :
 > 1. Valider le plan avec l'utilisateur (questions section 9 si présentes)
 > 2. Implémenter dans l'ordre de la section 8
-> 3. `/review-pr` avant PR, `/qa-flow` pour tester, `/ship-pr` pour créer la PR
+> 3. `/qa-flow` pour tester, `/ship-pr` pour créer la PR (il enchaîne `/review-pr`)
 
 ## Anti-patterns à éviter
 - ❌ Produire du code dans le plan (que du descriptif).

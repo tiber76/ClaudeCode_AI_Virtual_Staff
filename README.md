@@ -144,7 +144,7 @@ Plus `_partage/` (fil de progression, test manuel local), lus par les skills.
 
 ### Hooks (Claude Code)
 
-`.claude/hooks/`, cables dans `settings.local.json` :
+`.claude/hooks/`, cables dans `settings.local.json`. Prérequis : `bash` et `jq`.
 
 | Hook | Role |
 |---|---|
@@ -154,7 +154,7 @@ Plus `_partage/` (fil de progression, test manuel local), lus par les skills.
 | `e2e-level.sh` | niveau d'E2E avant PR depuis le diff : `aucun`, `specs`, `smoke` (jamais juge par l'agent) |
 | `fix-proof.sh` | preuve inversee d'un fix : le test echoue sans le fix, passe avec |
 
-Reglages dans `.claude/hooks/config.sh` (branches) et `e2e-sensitive.txt` (chemins sensibles). Bypass de la porte : `SKIP-review-pr` dans le body du commit, sur instruction humaine uniquement. Cote Codex, les memes scripts sont copies dans `.codex/hooks/` et lances par les skills.
+Reglages dans `.claude/hooks/config.sh` (branches) et `e2e-sensitive.txt` (chemins sensibles). Bypass de la porte : une ligne `SKIP-review-pr: <raison>` dans le body du commit, sur instruction humaine uniquement. Prerequis : `bash` et `jq`. Cote Codex, les memes scripts sont copies dans `.codex/hooks/` et se lancent avec `--check` avant le push.
 
 ### Documentation Projet
 

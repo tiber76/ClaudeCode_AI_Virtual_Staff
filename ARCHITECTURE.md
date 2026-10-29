@@ -19,6 +19,11 @@ racine-projet/
 │   ├── commands/                         ← raccourcis /<nom> qui invoquent un skill
 │   │   └── <nom>.md
 │   │
+│   ├── hooks/                            ← porte de review, niveaux calculés (review, E2E), preuve inversée
+│   │   └── <nom>.sh
+│   │
+│   ├── reviews/                          ← rapports de review par sha (gitignorés)
+│   │
 │   ├── settings.local.json               ← permissions, env vars, hooks (non versionné idéalement)
 │   │
 │   ├── call-call-tech-lead-runs/              ← artefacts produits par /call-tech-lead (inclure dans .gitignore)
@@ -223,12 +228,12 @@ Fichier à la racine, **scanné en début de session**. Format simple :
 Pour comprendre où chaque fichier est lu/écrit pendant un run orchestré :
 
 ```
-Utilisateur : /call-tech-lead "Ajoute export CSV candidats" --mode=semi
+Utilisateur : /call-tech-lead "Ajoute export CSV clients" --mode=semi
 
 ├── Phase 0 — Setup
-│   ├── Crée .claude/call-call-tech-lead-runs/YYYYMMDD-HHMMSS-export-csv-candidats/
+│   ├── Crée .claude/call-call-tech-lead-runs/YYYYMMDD-HHMMSS-export-csv-clients/
 │   ├── Écrit 00-input.md
-│   ├── Crée branche feature/export-csv-candidats
+│   ├── Crée branche feature/export-csv-clients
 │   └── Lit docs/GUIDE-LLM.md + backlog.md
 │
 ├── Phase 1 — Routing
@@ -238,7 +243,7 @@ Utilisateur : /call-tech-lead "Ajoute export CSV candidats" --mode=semi
 │
 ├── Phase 2 — PO rédige l'US
 │   ├── Invoque Agent(subagent_type: "po-metier", prompt: <besoin>)
-│   ├── L'agent écrit docs/us/US-export-csv-candidats.md
+│   ├── L'agent écrit docs/us/US-export-csv-clients.md
 │   ├── Copie dans 02-us.md
 │   └── CHECKPOINT (mode semi) : "Valide l'US ? (oui/modifier/stop)"
 │
@@ -256,7 +261,7 @@ Utilisateur : /call-tech-lead "Ajoute export CSV candidats" --mode=semi
 │
 ├── Phase 5 — Plan final
 │   ├── Invoque le skill /fullstack-lead-tech en sous-routine
-│   ├── Écrit docs/plans/PLAN-export-csv-candidats.md
+│   ├── Écrit docs/plans/PLAN-export-csv-clients.md
 │   └── CHECKPOINT (mode semi) : "Valide le plan ? (oui/ajuste/stop)"
 │
 ├── Phase 6 — Implémentation

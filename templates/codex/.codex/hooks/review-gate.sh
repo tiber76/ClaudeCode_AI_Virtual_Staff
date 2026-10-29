@@ -16,10 +16,17 @@
 # Limite assumée : la porte lit le sha, la grammaire du verdict et le palier ; elle ne prouve pas que les
 # angles du palier ont été joués, ni qui a écrit le rapport. La ligne **Coût** du rapport en est la trace.
 #
-# Bypass : une ligne `SKIP-review-pr …` en DÉBUT DE LIGNE dans le body du commit HEAD, sur instruction
-# explicite de l'utilisateur uniquement (une simple mention de la convention dans un texte est ignorée).
+# Bypass : une ligne `SKIP-review-pr: <raison>` (deux-points et raison obligatoires) en DÉBUT DE LIGNE dans
+# le body du commit HEAD, sur instruction explicite de l'utilisateur uniquement. Une phrase qui cite la
+# convention (« SKIP-review-pr est réservé… ») ne déclenche rien. C'est une déclaration tracée, pas un contrôle.
+#
+# Commandes reconnues (parse_push_cmd, review-dir.sh) : git push sous toutes ses formes usuelles (-C, -c,
+# options globales, cd <dossier> && …, bash -c "…", chemin absolu de git) et gh pr create. Un push lancé
+# via une commande indéterminée ($GIT, eval) est refusé ; un commit suivi d'un push dans le même appel aussi
+# (la porte lit HEAD avant le commit).
 #
 # Rejouer à la main : bash review-gate.sh --verdict <racine>/.codex/reviews/<sha>.md
+# Sans hook (Codex, terminal) : bash review-gate.sh --check [dossier du dépôt] → juge « git push » depuis ce dossier.
 # Réglages : review-dir.sh (config.sh optionnel). Auto-test : review-gate.test.sh.
 # Écrire un rapport : avec l'outil Write, jamais par un heredoc Bash — cette porte lit la commande
 # entière, heredoc compris, et bloquerait un texte qui cite un push ou une ouverture de PR.
@@ -29,7 +36,8 @@ unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX GIT_COMMON_DIR
 HOOKS_DIR="$(cd "$(dirname "$0")" && pwd)"
 . "$HOOKS_DIR/review-dir.sh"
 LEVEL_SH="$HOOKS_DIR/review-level.sh"
-BASE_REF="origin/$REVIEW_BASE_BRANCH"
+BASE_REF=""   # origin/<base>, fixé par set_base une fois le dépôt connu
+set_base() { BASE_BRANCH=$(resolve_base "$1"); BASE_REF="origin/$BASE_BRANCH"; }
 
 # verdict_check <rapport> <sha7> → 0 si « oui » ; sinon 1, cause sur stdout.
 verdict_check() {
@@ -39,7 +47,7 @@ verdict_check() {
   grep -q "^\*\*HEAD\*\* : \`$s" "$r" || { echo "la ligne HEAD du rapport ne cite pas $s (rapport d'un autre commit)"; return 1; }
   [ "$(grep -c '^## Verdict' "$r")" = 1 ] || { echo "section « ## Verdict » absente ou en double"; return 1; }
   v=$(awk '/^## Verdict/{f=1;print;next} /^## /{f=0} f' "$r")
-  printf '%s\n' "$v" | grep -q '^- \*\*Prêt pour `/ship-pr`\*\* : oui$' \
+  printf '%s\n' "$v" | grep -q '^- \*\*Prêt pour `[/$]ship-pr`\*\* : oui$' \
     || { echo "verdict « Prêt pour /ship-pr : oui » absent sous ## Verdict (zéro dette : un « non », une parenthèse ou toute autre forme bloque)"; return 1; }
   printf '%s\n' "$v" | grep -qE '^- \*\*À trancher\*\* : [0-9]+' \
     || { echo "ligne « - **À trancher** : N » absente sous ## Verdict"; return 1; }
@@ -51,7 +59,7 @@ level_check() {
   local r="$1" root="$2" sha="$3" out rc calc why reported rank_r rank_c n_commits
   [ -f "$LEVEL_SH" ] || { echo "review-level.sh introuvable à côté de la porte ($HOOKS_DIR) : palier incalculable"; return 1; }
   if ! git -C "$root" rev-parse --verify -q "$BASE_REF" >/dev/null 2>&1; then
-    echo "palier de review invérifiable : pas de ref $BASE_REF dans $root — jouer « git fetch origin $REVIEW_BASE_BRANCH » puis relancer (la porte ne se contente jamais d'un palier non calculé)"
+    echo "palier de review invérifiable : pas de ref $BASE_REF dans $root — jouer « git fetch origin $BASE_BRANCH » puis relancer (ou régler REVIEW_BASE_BRANCH dans config.sh) (la porte ne se contente jamais d'un palier non calculé)"
     return 1
   fi
   out=$(bash "$LEVEL_SH" "$root" "$BASE_REF" "$sha" 2>&1); rc=$?
@@ -93,81 +101,111 @@ if [ "${1:-}" = "--verdict" ]; then
   [ -n "${2:-}" ] || { echo "usage : review-gate.sh --verdict <rapport.md>" >&2; exit 1; }
   VSHA=$(basename "$2" .md); VDIR=$(cd "$(dirname "$2")" 2>/dev/null && pwd -P)
   VROOT=$(git -C "$VDIR" rev-parse --show-toplevel 2>/dev/null) || { echo "review-gate --verdict : le rapport n'est pas dans un dépôt git ($2)" >&2; exit 1; }
+  set_base "$VROOT"
   if CAUSE=$(verdict_check "$2" "$(printf '%s' "$VSHA" | cut -c1-7)") && CAUSE=$(level_check "$2" "$VROOT" "$VSHA"); then exit 0; fi
   echo "review-gate --verdict : $CAUSE" >&2; exit 1
 fi
 
-# ── Mode hook PreToolUse ────────────────────────────────────────────────────────────────────
-INPUT=$(cat)
-CMD=""; CWD=""; JQ_OK=1
-if command -v jq >/dev/null 2>&1; then
-  CMD=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null) || JQ_OK=0
-  CWD=$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null) || JQ_OK=0
+# ── Mode hook PreToolUse (ou --check) ──────────────────────────────────────────────────────
+if [ "${1:-}" = "--check" ]; then
+  CMD="git push"; CWD="${2:-$PWD}"
 else
-  JQ_OK=0
-fi
-if [ "$JQ_OK" = 0 ]; then
-  # Payload illisible : fermé par défaut seulement si la commande brute ressemble à un push.
-  if printf '%s' "$INPUT" | grep -qE '(git[^"]*push|gh[^"]*pr[^"]*create)'; then
-    echo "🛑 review-gate : payload PreToolUse illisible (jq absent ou en erreur) alors que la commande brute ressemble à un push — porte fermée par défaut." >&2
-    exit 2
+  INPUT=$(cat)
+  CMD=""; CWD=""; JQ_OK=1
+  if command -v jq >/dev/null 2>&1; then
+    CMD=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null) || JQ_OK=0
+    CWD=$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null) || JQ_OK=0
+  else
+    JQ_OK=0
   fi
-  exit 0
+  if [ "$JQ_OK" = 0 ]; then
+    # Payload illisible : fermé par défaut seulement si la commande brute ressemble à un push.
+    if printf '%s' "$INPUT" | grep -qE '(git[^"]*push|gh[^"]*pr[^"]*create)'; then
+      echo "🛑 review-gate : payload PreToolUse illisible (jq absent ou en erreur) alors que la commande brute ressemble à un push — porte fermée par défaut. Installer jq." >&2
+      exit 2
+    fi
+    exit 0
+  fi
 fi
 [ -z "$CMD" ] && exit 0
 
-# Seules les commandes qui poussent ou ouvrent une PR sont jugées (segments séparés par ; | &).
-TRIG='(^|[[:space:](])(git([[:space:]]+-C[[:space:]]+[^[:space:]]+)?[[:space:]]+push([[:space:]]|[;&|)]|$)|gh[[:space:]]+pr[[:space:]]+create([[:space:]]|[;&|)]|$))'
-SEGS=$(printf '%s' "$CMD" | tr ';|&' '\n')
-TRIG_SEGS=$(printf '%s\n' "$SEGS" | grep -E "$TRIG" || true)
-[ -n "$TRIG_SEGS" ] || exit 0
-# Exemptions : rien d'applicatif ne part (tags, suppression de branche — push-target-guard garde les branches protégées).
-REELS=$(printf '%s\n' "$TRIG_SEGS" | grep -vE '(--tags|--delete|[[:space:]]:[^[:space:]])' || true)
-[ -n "$REELS" ] || exit 0
+ACTIONS=$(parse_push_cmd "$CMD" "${CWD:-$PWD}")
+[ -n "$ACTIONS" ] || exit 0
 
-# Dépôt visé : `git -C <dir>` du segment, puis `cd <dir>`, puis le cwd du payload. Jamais de repli silencieux.
-strip_quotes() { tr -d "\"'"; }
-SEG=$(printf '%s\n' "$REELS" | head -1)
-C_DIR=$(printf '%s' "$SEG" | grep -oE 'git[[:space:]]+-C[[:space:]]+[^[:space:]]+' | head -1 | awk '{print $3}' | strip_quotes)
-CD_DIR=$(printf '%s' "$CMD" | grep -oE '(^|[;&|][[:space:]]*)cd[[:space:]]+[^[:space:];&|]+' | head -1 | awk '{print $NF}' | strip_quotes)
-DIR=""
-for cand in "$C_DIR" "$CD_DIR"; do
-  [ -n "$cand" ] || continue
-  if [ -d "$cand" ]; then DIR="$cand"; break; fi
-  echo "🛑 review-gate : dépôt visé « $cand » non résoluble (variable non développée, ~, dossier absent) — la porte ne se rabat jamais sur le dépôt courant : écrire le chemin absolu en clair." >&2
-  exit 2
-done
-[ -n "$DIR" ] || for cand in "$CWD" "$PWD"; do
-  if [ -n "$cand" ] && [ -d "$cand" ]; then DIR="$cand"; break; fi
-done
-ROOT=$(git -C "$DIR" rev-parse --show-toplevel 2>/dev/null) || exit 0   # hors dépôt : pas notre affaire
-BRANCH=$(git -C "$ROOT" branch --show-current 2>/dev/null || true)
-# Branche protégée : c'est push-target-guard qui juge (la review n'a pas de sens sur la base elle-même).
-if [ -n "$BRANCH" ] && is_protected "$BRANCH"; then exit 0; fi
-[ -n "$BRANCH" ] || BRANCH="HEAD détaché"
-SHA=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null) || exit 0
-
-# Bypass : instruction explicite de l'utilisateur, tracée dans le body du commit.
-if git -C "$ROOT" log -1 --format=%B 2>/dev/null | grep -qE '^SKIP-review-pr([[:space:]]|$)'; then
-  echo "⚠️  review-gate : bypass SKIP-review-pr sur ${SHA:0:7} — instruction explicite de l'utilisateur requise, traçable dans le commit." >&2
-  exit 0
+refuse() { echo "🛑 review-gate : $1" >&2; exit 2; }
+if printf '%s\n' "$ACTIONS" | grep -q '^opaque'; then
+  refuse "push lancé par une commande indéterminée (variable, eval) — écrire « git push … » en clair pour que la porte le juge."
+fi
+if printf '%s\n' "$ACTIONS" | awk -F'\t' '$1=="commit"{c=1} ($1=="push"||$1=="pr")&&c{f=1} END{exit !f}'; then
+  refuse "commit et push (ou ouverture de PR) dans la même commande : la porte lit HEAD avant le commit — committer, rejouer /review-pr sur le nouveau HEAD, puis pousser dans un appel séparé."
 fi
 
-REPORT="$ROOT/$(review_dir)/$SHA.md"
-gate_fail() {
-  {
-    echo "🛑 review-gate : $1 — HEAD ${SHA:0:7} (branche $BRANCH)."
-    echo "   Rapport attendu : $REPORT, écrit par /review-pr (lecture COMPLÈTE du diff, jamais grep seul, même pour des docs)."
-    echo "   Il doit porter : exactement une ligne « **HEAD** : \`${SHA:0:7}\` » ; une section « ## Verdict » contenant"
-    echo "   « - **Prêt pour \`/ship-pr\`** : oui » (« oui » seul, exactement ; « non » = findings ouverts : corriger puis re-reviewer)"
-    echo "   et « - **À trancher** : N » (0 si aucun) ; plus une ligne « **Niveau** : docs|leger|complet » au moins égale"
-    echo "   au palier calculé par review-level.sh."
-    echo "   Chaque nouveau commit change le sha et périme le rapport : rejouer /review-pr avant chaque push."
-    echo "   Bypass = une ligne « SKIP-review-pr … » en début de ligne dans le body du commit HEAD, sur instruction explicite de l'utilisateur uniquement."
-  } >&2
-  exit 2
+# push_exempt <arguments du push> → 0 si rien d'applicatif ne part (tags seuls, suppression de branche).
+push_exempt() {
+  local t pos=0 refs=0 dels=0 tags=0
+  set -f
+  for t in $1; do
+    case "$t" in
+      --delete|-d) set +f; return 0 ;;
+      --tags) tags=1 ;;
+      -o|--push-option|--repo|--receive-pack|--exec) ;;
+      -*) ;;
+      *) pos=$((pos+1)); if [ "$pos" -gt 1 ]; then refs=$((refs+1)); case "$t" in :*) dels=$((dels+1)) ;; esac; fi ;;
+    esac
+  done
+  set +f
+  [ "$refs" -gt 0 ] && [ "$dels" = "$refs" ] && return 0
+  [ "$refs" = 0 ] && [ "$tags" = 1 ] && return 0
+  return 1
 }
-CAUSE=$(verdict_check "$REPORT" "${SHA:0:7}") || gate_fail "$CAUSE"
-CAUSE=$(level_check "$REPORT" "$ROOT" "$SHA") || gate_fail "$CAUSE"
-CAUSE=$(proof_check "$ROOT" "$SHA" "$BRANCH") || gate_fail "$CAUSE"
+
+# check_repo <dossier> : juge le dépôt visé ; sort en 2 si la porte est fermée.
+check_repo() {
+  local dir="$1" ROOT BRANCH SHA REPORT CAUSE
+  [ -d "$dir" ] || refuse "dépôt visé « $dir » non résoluble (variable non développée, ~, dossier absent) — la porte ne se rabat jamais sur le dépôt courant : écrire le chemin absolu en clair."
+  ROOT=$(git -C "$dir" rev-parse --show-toplevel 2>/dev/null) || return 0   # hors dépôt : pas notre affaire
+  BRANCH=$(git -C "$ROOT" branch --show-current 2>/dev/null || true)
+  # Branche protégée : c'est push-target-guard qui juge (la review n'a pas de sens sur la base elle-même).
+  if [ -n "$BRANCH" ] && is_protected "$BRANCH"; then return 0; fi
+  [ -n "$BRANCH" ] || BRANCH="HEAD détaché"
+  SHA=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null) || return 0
+  set_base "$ROOT"
+
+  # Bypass : instruction explicite de l'utilisateur, tracée dans le body du commit.
+  if git -C "$ROOT" log -1 --format=%B 2>/dev/null | grep -qE '^SKIP-review-pr:[[:space:]]*[^[:space:]]'; then
+    echo "⚠️  review-gate : bypass SKIP-review-pr sur ${SHA:0:7} — instruction explicite de l'utilisateur requise, traçable dans le commit." >&2
+    return 0
+  fi
+
+  REPORT="$ROOT/$(review_dir)/$SHA.md"
+  gate_fail() {
+    {
+      echo "🛑 review-gate : $1 — HEAD ${SHA:0:7} (branche $BRANCH)."
+      echo "   Rapport attendu : $REPORT, écrit par /review-pr (lecture COMPLÈTE du diff, jamais grep seul, même pour des docs)."
+      echo "   Il doit porter : exactement une ligne « **HEAD** : \`${SHA:0:7}\` » ; une section « ## Verdict » contenant"
+      echo "   « - **Prêt pour \`/ship-pr\`** : oui » (« oui » seul, exactement ; « non » = findings ouverts : corriger puis re-reviewer)"
+      echo "   et « - **À trancher** : N » (0 si aucun) ; plus une ligne « **Niveau** : docs|leger|complet » au moins égale"
+      echo "   au palier calculé par review-level.sh (base : $BASE_REF)."
+      echo "   Chaque nouveau commit change le sha et périme le rapport : rejouer /review-pr avant chaque push."
+      echo "   Bypass = une ligne « SKIP-review-pr: <raison> » en début de ligne dans le body du commit HEAD, sur instruction explicite de l'utilisateur uniquement."
+    } >&2
+    exit 2
+  }
+  CAUSE=$(verdict_check "$REPORT" "${SHA:0:7}") || gate_fail "$CAUSE"
+  CAUSE=$(level_check "$REPORT" "$ROOT" "$SHA") || gate_fail "$CAUSE"
+  CAUSE=$(proof_check "$ROOT" "$SHA" "$BRANCH") || gate_fail "$CAUSE"
+  return 0
+}
+
+TAB=$(printf '\t')
+while IFS="$TAB" read -r kind dir args; do
+  case "$kind" in
+    push) push_exempt "$args" && continue ;;
+    pr) ;;
+    *) continue ;;
+  esac
+  check_repo "$dir"
+done <<EOF_ACTIONS
+$ACTIONS
+EOF_ACTIONS
 exit 0

@@ -23,7 +23,7 @@ Cette release porte dans le kit public cinq mois de rodage sur un projet privé 
 - **Fichiers partagés** `skills/_partage/` : `fil-de-progression.md` (plan de route, lignes `▶/✓ Étape N/M`, blocs `🟥/🟧 À TOI`, restitution sans jargon, demande de validation) et `test-manuel-local.md` (l'agent joue lui-même le parcours dans un vrai navigateur).
 - **5 agents** : `full-stack-worker` (une tranche = un worker frais), `review-finder` et `review-verifier` (pipeline de review), `pre-mortem-adversaire`, `integrateur`.
 - **Hooks Claude Code** `templates/claude/hooks/` (câblés dans `settings.template.json`) :
-  - `review-gate.sh` — bloque `git push` / `gh pr create` sans rapport `.claude/reviews/<sha HEAD>.md` au palier calculé ; sur `fix/*`, exige aussi la preuve inversée. Bypass `SKIP-review-pr` dans le body du commit, sur instruction humaine.
+  - `review-gate.sh` — bloque `git push` / `gh pr create` sans rapport `.claude/reviews/<sha HEAD>.md` au palier calculé ; sur `fix/*`, exige aussi la preuve inversée. Bypass : une ligne `SKIP-review-pr: <raison>` dans le body du commit, sur instruction humaine. Reconnaît les formes usuelles de push (`cd … && git push`, `bash -c`, `git -c …`) ; refuse un commit et un push dans le même appel.
   - `review-level.sh` — palier de review depuis le diff : `docs` (1 chercheur), `leger` (5), `complet` (8).
   - `push-target-guard.sh` — refuse un push direct sur les branches protégées.
   - `e2e-level.sh` + `e2e-sensitive.txt` — niveau d'E2E avant PR (`aucun` / `specs` / `smoke`), calculé, jamais jugé ; le nightly fait foi.

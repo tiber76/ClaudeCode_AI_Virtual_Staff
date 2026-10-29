@@ -54,7 +54,7 @@ git branch --show-current
 git status
 git diff --stat
 ```
-Fichiers non suivis suspects (`.env*`, `*.secret`, `credentials*`) → 🛑 signaler. Aucun changement → 🛑 rien à ship.
+Fichiers non suivis suspects (`.env*`, `*.secret`, `credentials*`) → 🛑 signaler. Arbre propre **et** aucun commit devant `origin/{{GIT_DEFAULT_BRANCH}}` → 🛑 rien à ship (un arbre propre avec des commits à pousser continue).
 
 ### 3. Tests unit + API
 ```bash
@@ -70,7 +70,7 @@ Doit passer. Si le diff touche un chemin sensible et que la passe de sécurité 
 
 ### 5. Tests E2E : niveau calculé par le script, jamais jugé
 
-Aucune CI ne joue les E2E avant PR, mais le **nightly rejoue toute la suite** et fait foi. Avant PR, un E2E ne se joue que si le diff le demande. **L'agent ne juge pas** : il lance le script et applique son verdict.
+Avant PR, un E2E ne se joue que si le diff le demande. Si le projet a un nightly E2E, il rejoue toute la suite et fait foi ; sinon, le niveau `aucun` signifie que les E2E restent à la charge de la CI ou de l'humain, et la PR le dit. **Projet sans E2E** (`{{STACK_TEST_E2E}}` = none) : cette étape est sans objet, et la PR le dit. **L'agent ne juge pas** : il lance le script et applique son verdict.
 
 ```bash
 ROOT=$(git rev-parse --show-toplevel); git fetch origin {{GIT_DEFAULT_BRANCH}} 2>/dev/null || true
@@ -82,7 +82,7 @@ Ligne 1 : `aucun|specs|smoke` · ligne 2 : la raison · puis `spec<TAB>chemin` p
 | Niveau | Quand | Ce qui se joue avant PR |
 |---|---|---|
 | `smoke` | le diff touche un chemin sensible | `{{CMD_E2E_SMOKE}}` **avec** les specs listés, dans le même run |
-| `specs` | aucun chemin sensible, mais un spec E2E ajouté ou modifié | ces specs seuls : sinon un test jamais joué n'est vu qu'au nightly |
+| `specs` | aucun chemin sensible, mais un spec E2E ajouté ou modifié | ces specs seuls : sinon un test jamais joué n'est vu qu'à la prochaine suite complète |
 | `aucun` | tout le reste | rien : la PR part sans E2E, la ligne de statut le dit |
 
 - **Niveau `aucun`** : pas de run « pour être sûr », c'est la décision.
@@ -141,7 +141,7 @@ Invoquer via le **Skill tool**, jamais en bash : `Skill(skill="review-pr")`. Le 
 - **Exception « à trancher »** : un 🟠 (jamais un 🔴) qui exige une décision produit → encadré « À trancher » dans la PR (quoi · options · comportement actuel). Il n'empêche pas le push, il bloque le merge.
 - **0 🔴 et 0 🟠 ouvert** → étape 9, dès que E2E et build sont verts.
 
-**Bypass interdit** : aucun skip de cette étape sans instruction explicite de l'utilisateur (`SKIP-review-pr` dans le body du commit, ou phrase explicite). Skipper en silence = anti-pattern bloquant, équivalent à `--no-verify`.
+**Bypass interdit** : aucun skip de cette étape sans instruction explicite de l'utilisateur (ligne `SKIP-review-pr: <raison>` dans le body du commit). Skipper en silence = anti-pattern bloquant, équivalent à `--no-verify`.
 
 ### 9. Push
 ```bash

@@ -96,7 +96,7 @@ Pour chaque nouvelle route / feature :
 - [ ] **Rôle** : `profile.role` vérifié côté serveur ({{ROLES_ENUM}}).
 - [ ] **Accès à la ressource (IDOR)** : toute mutation sur une ressource appartenant à un autre objet (projet, dossier, enregistrement) passe par un helper d'accès central qui vérifie le lien entre l'utilisateur et **cette** ressource. Un simple `.eq('user_id', user.id)` écrit à la main à la place du helper = Critique.
 - [ ] **Wrapper commun** : la route est enveloppée par le wrapper du projet qui applique le contrôle CSRF et la journalisation. Une route hors wrapper doit avoir ses propres garde-fous, documentés.
-- [ ] **Route d'administration interne** : réservée au back-office → helper d'autorisation dédié, jamais un test maison sur un drapeau du profil.
+- [ ] **Route d'administration interne** : réservée au back-office → helper d'autorisation dédié, rôle `{{ROLE_ADMIN}}` vérifié côté serveur, jamais un test maison sur un champ du profil.
 {{#IF HAS_RATE_LIMITING}}
 - [ ] **Rate-limit** : évalué sur POST/PUT/DELETE. Présent si route publique-ish (même authentifiée).
 {{/IF}}

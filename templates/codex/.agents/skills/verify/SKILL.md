@@ -33,7 +33,7 @@ Bloquer un commit prématuré : une checklist courte et déterministe sur le sco
 |---|---|---|
 | **Cycle TDD** (rouge, vert, refactor) | le seul fichier de test du cas | `{{CMD_UNIT_TEST}}` restreint au fichier |
 | **Commit** (item 1) | les suites qui importent les sources touchées | ciblage « tests liés aux sources » de votre runner (ex. `--findRelatedTests`) |
-| **Avant de rendre la main** ou `$ship-pr` | la suite entière unit + intégration, **une fois** | `{{CMD_UNIT_TEST}}` puis `{{CMD_INT_TEST}}` ; E2E au niveau calculé par `.codex/hooks/e2e-level.sh` (`$ship-pr` étape 5) |
+| **Avant de rendre la main** ou `$ship-pr` | la suite entière unit + intégration, **une fois** | `{{CMD_UNIT_TEST}}` puis `{{CMD_INT_TEST}}` ; E2E au niveau calculé par `.codex/hooks/e2e-level.sh` (`$ship-pr` étape 5 ; sans suite E2E dans le projet, sans objet) |
 | **Après un échec de la suite entière** | les seuls fichiers en échec jusqu'au vert, puis la suite entière une dernière fois | fichiers nommés |
 
 - **Ciblée, pas le seul test du lot** : dès que le commit touche un composant ou un helper partagé, lancer les suites qui l'importent, pas seulement le test écrit pour le lot (un test sœur qui rend le même composant casse en silence sinon).
@@ -68,6 +68,8 @@ Console du navigateur pendant le smoke : ✓ aucune erreur, aucun warning du fra
 
 ### 7. Pièges connus (GUIDE-LLM §12) respectés
 Scanner l'index de `docs/GUIDE-LLM.md` §12 « Pièges connus » pour la zone touchée (handler API, composant, accès aux données, sécurité, CSS, E2E…). ✓ pièges pertinents mitigés ou non applicables. ❌ un piège pertinent ignoré.
+
+**+ chemin sensible** : si le diff touche un chemin sensible (`bash .codex/hooks/review-level.sh --files <racine> origin/{{GIT_DEFAULT_BRANCH}} HEAD` affiche une ligne `sensible`), lancer `$pre-mortem` avant le commit et couvrir ses cas par des tests.
 
 ### 8. Décision business ou autorisation prise AVANT le commit
 Si le commit applique une décision métier non triviale (gating par rôle, règle de calcul, autorisation d'accès), l'utilisateur l'a-t-il validée avant ? ✓ décision actée ou aucune dans ce commit. ❌ option business engagée sans validation : stop, demander d'abord.

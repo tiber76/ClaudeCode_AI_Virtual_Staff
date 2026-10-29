@@ -19,7 +19,7 @@ Ce fichier donne a Codex les regles transverses du projet. Les details projet vi
 - Pour un bug, commencer par `$investigate-bug` sauf si la cause est deja isolee.
 - Pour un sujet de taille S (bug, dette, petite tache), utiliser `$dev-express` ; pour un bug S avec preuve inversee, `$fix-bug`. L'eligibilite est definie dans `$dev-express` (section Eligibilite) ; au moindre signal lourd, retour a `$call-tech-lead`.
 - Avant chaque commit applicatif : `$verify` (trace `/verify : N/8` dans le body du commit).
-- Avant toute PR : `$ship-pr`, qui enchaine `$review-pr` au palier calcule par `.codex/hooks/review-level.sh` et l'E2E au niveau calcule par `.codex/hooks/e2e-level.sh`. Codex n'a pas de hook automatique : lancer `.codex/hooks/review-gate.sh` et `.codex/hooks/push-target-guard.sh` a la main avant le push.
+- Avant toute PR : `$ship-pr`, qui enchaine `$review-pr` au palier calcule par `.codex/hooks/review-level.sh` et l'E2E au niveau calcule par `.codex/hooks/e2e-level.sh`. Codex n'a pas de hook automatique : avant chaque push, lancer `bash .codex/hooks/review-gate.sh --check` puis `bash .codex/hooks/push-target-guard.sh --check` depuis la racine du depot (exit 2 = ne pas pousser ; prerequis : `jq`).
 - Fin de session en worktree : `$close-session`.
 - Suivi de progression et restitution : `.agents/skills/_partage/fil-de-progression.md`.
 - Les runs orchestres ecrivent leurs artefacts sous `.codex/runs/<skill>/<YYYYMMDD-HHMMSS-slug>/`.

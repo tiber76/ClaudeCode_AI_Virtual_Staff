@@ -15,6 +15,7 @@ allowed-tools:
   - Grep
   - Glob
   - Agent
+  - Write
 triggers:
   - review la PR
   - code review
@@ -31,7 +32,7 @@ triggers:
 Challenger le diff courant contre les règles de `docs/GUIDE-LLM.md` avant de créer ou merger une PR : des relecteurs indépendants cherchent, un contre-expert tranche chaque alerte sur pièce. Produire un rapport priorisé qui identifie les bloquants réels, sans bruit. Mandats des sous-agents : `angles.md` (même dossier) ; agents : `review-finder`, `review-verifier`.
 
 ## Quand l'utiliser
-- Juste avant `/ship-pr` (systématique).
+- Enchaîné par `/ship-pr` (systématique, rien à lancer à la main avant).
 - Pour auto-review pendant le développement, ou après la résolution d'un conflit de merge.
 - Sous `/call-tech-lead` : l'orchestrateur joue lui-même ce skill sur chaque tranche, pipeline complet (un sous-agent n'a pas l'outil `Agent` et ne peut pas spawner).
 
@@ -205,13 +206,13 @@ Format strict du rapport :
 
 Le rapport est écrit sur disque, nommé par le sha reviewé : `$ROOT/.claude/reviews/$SHA.md` (dossier hors dépôt via `.gitignore`). **L'écrire avec l'outil Write, jamais par un heredoc Bash** : la porte lit la commande entière, heredoc compris, et bloquerait un texte qui cite une poussée de branche ou une ouverture de PR — ce qu'un rapport fait presque toujours.
 
-La porte (`.claude/hooks/review-gate.sh`, hook PreToolUse Bash) exige avant tout `git push` / `gh pr create` : exactement une ligne `**HEAD** : \`<sha7>\`` égale au sha du fichier ; exactement une section `## Verdict` avec dessous `- **Prêt pour \`/ship-pr\`** : oui` (« oui » seul) et `- **À trancher** : N` ; exactement une ligne `**Niveau** : docs|leger|complet` en clair d'un palier au moins égal au calculé ; sur une branche de correctif de bug (`{{GIT_PREFIX_FIX}}*`), la preuve inversée `fix-proof-<sha7>.md` valable pour HEAD. `bash .claude/hooks/review-gate.sh --verdict <rapport>` rejoue la grammaire à la main (exit 0 = « oui »).
+La porte (`.claude/hooks/review-gate.sh` : hook PreToolUse Bash côté Claude Code, `--check` à la main sinon) exige avant tout `git push` / `gh pr create` : exactement une ligne `**HEAD** : \`<sha7>\`` égale au sha du fichier ; exactement une section `## Verdict` avec dessous `- **Prêt pour \`/ship-pr\`** : oui` (« oui » seul) et `- **À trancher** : N` ; exactement une ligne `**Niveau** : docs|leger|complet` en clair d'un palier au moins égal au calculé ; sur une branche de correctif de bug (`{{GIT_PREFIX_FIX}}*`), la preuve inversée `fix-proof-<sha7>.md` valable pour HEAD. `bash .claude/hooks/review-gate.sh --verdict <rapport>` rejoue la grammaire à la main (exit 0 = « oui »).
 
 - Avant de poster, passer le rapport au contrôle des secrets que le projet applique à un body de PR, s'il en a un.
 - PR déjà ouverte (`gh pr list --head "$(git branch --show-current)" --state open --json number`) → `gh pr comment <n> --body-file "$ROOT/.claude/reviews/$SHA.md"`. Pas encore de PR → l'appelant (`/ship-pr`, `/call-tech-lead`) le poste dès qu'elle existe.
 - **Idempotence** : un rapport existe déjà pour HEAD → ne pas rejouer, sauf s'il ne porte pas de ligne `**Niveau**` valable, ou si l'appelant a l'outil `Agent` alors que le rapport est « inline » (le renommer `<sha>.inline.md`, hors porte, et le citer en une ligne dans le nouveau).
 - **Révision sur le même sha** (finding contesté sur pièce, sans commit) : par l'orchestrateur seul, qui vérifie l'argument `fichier:ligne`, met à jour les lignes sous `## Verdict` et ajoute **après** le Verdict une section `## Révision <date>` ; c'est la seule modification autorisée d'un rapport existant.
-- **Bypass** : une ligne `SKIP-review-pr …` en début de ligne dans le body du commit HEAD, sur instruction explicite de l'utilisateur uniquement (la porte ignore une simple mention). Aucun bypass silencieux.
+- **Bypass** : une ligne `SKIP-review-pr: <raison>` (avec deux-points) en début de ligne dans le body du commit HEAD, sur instruction explicite de l'utilisateur uniquement (la porte ignore une simple mention). Aucun bypass silencieux.
 
 ### Fallback — mode inline (sans sous-agents)
 
@@ -234,4 +235,4 @@ Ce skill n'édite jamais le code. Les corrections sont jouées par l'appelant : 
 - §1 Clean code · §4 Tests · §5 Checklist avant commit · §7 Sécurité · §8 UX/UI · §12 Pièges connus · helpers canoniques du projet
 
 ## 💰 Coût indicatif
-Le contexte projet rechargé par chaque sous-agent est le poste dominant : de l'ordre de quelques centaines de milliers de tokens pour une passe sur un delta, à plus d'un million pour une première passe complète. Aucun de ces chiffres ne justifie une passe dégradée (principes 8 et 9). Détail et optimisations : `docs/COUTS-LLM.md` si le projet le tient.
+Le contexte projet rechargé par chaque sous-agent est le poste dominant : lourd pour une première passe complète, plus léger pour une passe sur un delta. Ce coût ne justifie une passe dégradée (principes 8 et 9). Détail et optimisations : `docs/COUTS-LLM.md` si le projet le tient.

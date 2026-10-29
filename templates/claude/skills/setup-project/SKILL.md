@@ -245,7 +245,7 @@ Si "modifier" → proposer de modifier une section spécifique, relancer juste c
 
 ### Étape 3 — Application des remplacements
 
-Pour chaque fichier avec placeholders (`.claude/agents/*.md`, `.claude/skills/**/*.md`, `.claude/hooks/config.sh`, `CLAUDE.md`, `docs/*.md`) :
+Pour chaque fichier avec placeholders (`.claude/agents/*.md`, `.claude/skills/**/*.md`, `.claude/commands/*.md`, `.claude/hooks/config.sh`, `CLAUDE.md`, `docs/*.md`) :
 
 1. Lire le fichier.
 2. Remplacer tous les `{{VARIABLE}}` connus par leur valeur.
@@ -271,8 +271,9 @@ Les agents de mécanique (`full-stack-worker`, `review-finder`, `review-verifier
 
 ### Étape 4 bis — Hooks
 
+0. Prérequis : `jq` installé (les hooks `review-gate` et `push-target-guard` en ont besoin et ferment la porte sans lui).
 1. `chmod +x .claude/hooks/*.sh` (au cas où la copie a perdu le bit exécutable).
-2. Vérifier `.claude/hooks/config.sh` : `REVIEW_BASE_BRANCH` et `PROTECTED_BRANCHES` remplis.
+2. Vérifier `.claude/hooks/config.sh` : `REVIEW_BASE_BRANCH` et `PROTECTED_BRANCHES` remplis, et renseigner `FIX_BRANCH_RE` et `E2E_DIR`.
 3. Adapter `.claude/hooks/e2e-sensitive.txt` (chemins qui déclenchent le smoke E2E) et, si besoin, `REVIEW_SENSITIVE_RE` dans `config.sh` (chemins qui déclenchent le palier de review `complet`) aux dossiers réels du projet.
 4. Lancer les auto-tests : `for t in .claude/hooks/*.test.sh; do bash "$t"; done`.
 5. Les hooks sont câblés dans `.claude/settings.local.json` (issu de `settings.template.json`). Pour que toute l'équipe les ait, proposer de déplacer le bloc `hooks` dans `.claude/settings.json` versionné.

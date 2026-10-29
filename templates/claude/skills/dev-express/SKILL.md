@@ -74,14 +74,14 @@ Non éligible, ou un doute → `/call-tech-lead <cible> --mode=<même mode>`. Re
 ### 0. Intake
 
 1. Parse la cible et `--mode`. Slug kebab-case stable (branche, commits, titre de PR).
-2. Dossier de run `.claude/call-tech-lead-runs/<YYYYMMDD-HHMMSS>-<slug>/` (gitignoré, même racine que `/call-tech-lead`). Écrire `00-input.md` (cible verbatim, mode, horodatage, origine : direct ou bascule depuis `/call-tech-lead`) et `TRANSCRIPT.md` (gabarit ci-dessous).
+2. Dossier de run `.claude/call-call-tech-lead-runs/<YYYYMMDD-HHMMSS>-<slug>/` (gitignoré, même racine que `/call-tech-lead`). Écrire `00-input.md` (cible verbatim, mode, horodatage, origine : direct ou bascule depuis `/call-tech-lead`) et `TRANSCRIPT.md` (gabarit ci-dessous).
 3. **Éligibilité** : verdict et raison dans le TRANSCRIPT, une ligne. Non éligible → bascule et fin du run.
 4. **Branche** : si une branche de travail est déjà active (créée pour la session), la garder. Sinon la créer depuis la branche de base à jour : `git fetch origin && git switch -c {{GIT_PREFIX_FIX}}<slug> origin/{{GIT_DEFAULT_BRANCH}}` (`chore/<slug>` pour une dette, une tâche ou un outil, `docs/<slug>` pour de la doc seule). Écrire la base : `git merge-base origin/{{GIT_DEFAULT_BRANCH}} HEAD > <run>/06-base.sha`. Sur toute autre branche : confirmation en `semi`, STOP en `auto`. Avant le ship : arbre propre, diff non vide, aucun empilement sur une autre PR.
 5. Pas d'annonce de coût, pas de plan, pas d'US.
 
 ### 1. Bug → cause racine d'abord
 
-Cible de type bug → `Skill(skill="fix-bug")`, le profil bug de l'express : il reprend les étapes 0, 3, 4 et 5 d'ici et y ajoute la cause racine avant tout patch (`/investigate-bug`, rapport dans `01-investigation.md`, **interdit de patcher sans**), le test de reproduction rouge avant le fix, la preuve inversée par `.claude/hooks/fix-proof.sh` et l'angle altitude en review. Option robuste (B) par défaut ; l'option minimale se justifie dans la note de cadrage, jamais en silence.
+Cible de type bug → `Skill(skill="fix-bug")`, le profil bug de l'express : il reprend les étapes 0, 3, 4 et 5 d'ici et y ajoute la cause racine avant tout patch (`/investigate-bug`, rapport dans `01-investigation.md`, **interdit de patcher sans**), le test de reproduction rouge avant le fix, la preuve inversée par `.claude/hooks/fix-proof.sh` et l'angle altitude en review. Le fix robuste proposé par `/investigate-bug` par défaut ; l'option minimale se justifie dans la note de cadrage, jamais en silence.
 
 ### 2. Note de cadrage — 10 lignes, vérifiées
 
@@ -101,7 +101,7 @@ Cible de type bug → `Skill(skill="fix-bug")`, le profil bug de l'express : il 
 Pas de worker : la session écrit le code (le contexte est frais par construction, un run = une PR).
 
 - **TDD strict** par cas de la note : test rouge (lire le message d'échec : il vient de la feature manquante, pas d'un import cassé), code minimal, refactor. Exceptions : config pure, docs, renommage pur. Du code applicatif écrit sans test rouge préalable est supprimé et réécrit.
-- **Commits atomiques**, 2 à 5 pour un sujet S, messages FR avec accents écrits via fichier (`git commit -F /tmp/<slug>-$RUN_ID.txt`, `RUN_ID` frais pour qu'un fichier obsolète ne soit pas réutilisé), `git add` nominatif, jamais `-A`. Body : ce que ça change en clair, pourquoi, tests, trace `/verify : N/8 ✓`.
+- **Commits atomiques**, 2 à 5 pour un sujet S, messages FR avec accents écrits via fichier (`git commit -F <fichier>`, un nom de fichier unique par commit, ex. `mktemp`, pour qu'un fichier obsolète ne soit pas réutilisé), `git add` nominatif, jamais `-A`. Body : ce que ça change en clair, pourquoi, tests, trace `/verify : N/8 ✓`.
 - **`/verify` avant chaque commit** (8 items ; un item sans objet est dit N/A avec la raison, jamais omis). Smoke visuel sur le layout réel si UI.
 - **Constantes métier** : `rg` avant tout littéral, pour réutiliser la constante exportée existante plutôt que la redéclarer.
 - **Test manuel local** : une fois les cas de la note verts, si le sujet touche l'application, l'agent joue lui-même le parcours sur le serveur local (`{{CMD_DEV}}`), dans un vrai navigateur, avant `/ship-pr`. Règle et statuts (✓ / ✗ / non joué + raison / sans objet) : `.claude/skills/_partage/test-manuel-local.md`. Un ✗ est un défaut à corriger, jamais une PR.
@@ -112,7 +112,7 @@ Pas de worker : la session écrit le code (le contexte est frais par constructio
 
 `Skill(skill="ship-pr")` sans rien en retirer : tests, trace `/verify`, **`/review-pr` au palier calculé** (zéro dette, porte `review-gate`), push, `gh pr create --base {{GIT_DEFAULT_BRANCH}}`.
 
-- **Tests sur le périmètre touché** : unitaires (`{{CMD_UNIT_TEST}}`) puis intégration (`{{CMD_INT_TEST}}`) ; E2E au niveau calculé par `.claude/hooks/e2e-level.sh` (`aucun`, `specs` ou `smoke`, jamais jugé par l'agent) ; docs seules → rien à jouer, et la PR le dit.
+- **Tests sur le périmètre touché** : unitaires (`{{CMD_UNIT_TEST}}`) puis intégration (`{{CMD_INT_TEST}}`) ; E2E au niveau calculé par `.claude/hooks/e2e-level.sh` (`aucun`, `specs` ou `smoke`, jamais jugé par l'agent ; sans suite E2E dans le projet, sans objet et dit dans la PR) ; docs seules → rien à jouer, et la PR le dit.
 - **Body de PR** : le gabarit de PR du projet, court, en langage produit, plus **une seule ligne de statut**, gabarit unique pour l'express et ses profils (`/fix-bug` y ajoute ses champs, jamais une seconde ligne) : `Mode : express|fix-bug — éligibilité : <origine, taille> · palier review : <docs|leger|complet> (<raison du script>) · test manuel local : <✓ (<scénario court>) | ✗ | non joué (<raison>) | sans objet (<raison>)>`.
 - **Chemin sensible dans le diff** (palier `complet`) : agent `cso` sur le diff avant d'invoquer `/ship-pr`, donc avant la première passe de review.
 - Jamais de merge.
@@ -130,7 +130,7 @@ Cible : <ticket | issue | backlog <entrée> | texte libre> · Origine : <direct 
 Éligibilité : ✓ <origine, taille, aucun signal lourd> | ✗ → /call-tech-lead (<raison>)
 Investigation (bug) : <cause racine, option retenue> | N/A
 Preuve inversée (fix-bug) : ok (<test>, base <sha7>) | N/A
-Tests E2E (fix-bug) : <n> audités (<catégories>) — <verdict> · <m> ajoutés ou corrigés · rejeu <RUN_ID> vert | non joué (<raison>) | N/A
+Tests E2E (fix-bug) : <n> audités (<catégories>) — <verdict> · <m> ajoutés ou corrigés · rejeu <identifiant du run> vert | non joué (<raison>) | N/A
 Note de cadrage : 00-cadrage.md — <n> cas
 Commits : <n> — <hash7 titre> …
 Tests : <ce qui a été joué, P/T> · /verify : N/8 sur chaque commit

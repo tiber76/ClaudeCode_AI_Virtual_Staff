@@ -41,7 +41,7 @@ palier "400 lignes applicatives" complet
 reset_branch; mkdir -p "$TMP/w/src/auth"; lines 3 > "$TMP/w/src/auth/login.js"; G add -A; G commit -qm auth
 palier "3 lignes sous auth/ (chemin sensible)" complet
 
-reset_branch; mkdir -p "$TMP/w/.codex/skills/review-pr"; echo x > "$TMP/w/.codex/skills/review-pr/SKILL.md"; G add -A; G commit -qm skill
+reset_branch; mkdir -p "$TMP/w/.agents/skills/review-pr"; echo x > "$TMP/w/.agents/skills/review-pr/SKILL.md"; G add -A; G commit -qm skill
 palier "la procédure de review elle-même (Markdown) est sensible" complet
 
 reset_branch; mkdir -p "$TMP/w/docs"; echo x > "$TMP/w/docs/guide.md"; G add -A; G commit -qm docs

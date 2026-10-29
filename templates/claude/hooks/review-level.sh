@@ -12,7 +12,7 @@
 #   review-level.sh --sensitive                       → la regex des chemins sensibles
 #   review-level.sh --files <racine> [base] [head]    → une ligne « <classe><TAB><chemin> » par fichier du diff,
 #                                                        classe ∈ sensible | doc | test | nonapp | lock | app
-# base par défaut : origin/<REVIEW_BASE_BRANCH> ; head par défaut : HEAD. Le diff est celui de la PR
+# base par défaut : origin/<branche de base> (resolve_base, review-dir.sh) ; head par défaut : HEAD. Le diff est celui de la PR
 # (base...head) : le palier mesure le risque de ce qui part, pas du dernier commit.
 #
 # Paliers :
@@ -63,7 +63,7 @@ case "${1:-}" in
 esac
 MODE="${MODE:-palier}"
 
-ROOT="$1"; BASE="${2:-origin/$REVIEW_BASE_BRANCH}"; HEAD_REF="${3:-HEAD}"
+ROOT="$1"; BASE="${2:-origin/$(resolve_base "$ROOT")}"; HEAD_REF="${3:-HEAD}"
 git -C "$ROOT" rev-parse --verify -q "$BASE" >/dev/null || { echo "review-level : base introuvable : $BASE (dépôt $ROOT)" >&2; exit 1; }
 git -C "$ROOT" rev-parse --verify -q "$HEAD_REF" >/dev/null || { echo "review-level : head introuvable : $HEAD_REF" >&2; exit 1; }
 

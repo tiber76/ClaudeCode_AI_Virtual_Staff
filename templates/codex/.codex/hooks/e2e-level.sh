@@ -11,10 +11,11 @@
 #   smoke  le diff touche un chemin sensible (e2e-sensitive.txt) : on joue le smoke
 #          ET les specs listés, dans le même run
 #   specs  aucun chemin sensible, mais un spec E2E est ajouté ou modifié : ces specs seuls
-#   aucun  tout le reste : pas d'E2E avant PR (le nightly rejoue tout et fait foi)
+#   aucun  tout le reste : pas d'E2E avant PR (le nightly ou la CI E2E du projet, s'il en a un, rejoue tout ; sinon, le dire dans la PR)
 #
 # Réglages (variables d'environnement, ou éditer les valeurs ci-dessous) :
-#   E2E_DEFAULT_BRANCH  branche de comparaison (défaut : REVIEW_BASE_BRANCH de config.sh, sinon develop)
+#   E2E_DEFAULT_BRANCH  branche de comparaison (défaut : la branche de base, resolve_base de review-dir.sh)
+#   E2E_DIR             dossier des specs E2E (config.sh) ; « none » ou vide = le projet n'a pas d'E2E
 #   E2E_SPEC_RE         regex ERE des fichiers de spec E2E
 #   E2E_SENSITIVE_FILE  fichier des chemins sensibles (défaut : e2e-sensitive.txt à côté du script)
 set -u
@@ -24,8 +25,16 @@ export LC_ALL=C
 HERE="$(cd "$(dirname "$0")" && pwd)"
 # Même configuration que les hooks de review (config.sh optionnel, source unique).
 [ -f "$HERE/review-dir.sh" ] && . "$HERE/review-dir.sh"
-DEFAULT_BRANCH="${E2E_DEFAULT_BRANCH:-${REVIEW_BASE_BRANCH:-develop}}"
-SPEC_RE="${E2E_SPEC_RE:-(^|/)(e2e|tests/e2e)/(.*/)?[^/]+\.(spec|test)\.[cm]?[jt]sx?$}"
+# Placeholder non remplacé ou « none » : pas de dossier E2E déclaré.
+case "${E2E_DIR:-}" in *"{""{"*|none|NONE|None) E2E_DIR="" ;; esac
+E2E_DIR=${E2E_DIR%/}
+if [ -n "${E2E_SPEC_RE:-}" ]; then SPEC_RE=$E2E_SPEC_RE
+elif [ -n "$E2E_DIR" ]; then
+  # Les fichiers de spec sous le dossier déclaré (chemin échappé), plus les emplacements usuels.
+  SPEC_RE="^$(printf '%s' "$E2E_DIR" | sed 's/[.[\*^$()+?{|]/\\&/g')/(.*/)?[^/]+\.(spec|test|cy)\.[a-z]+$|(^|/)(e2e|cypress/e2e)/(.*/)?[^/]+\.(spec|test|cy)\.[cm]?[jt]sx?$"
+else
+  SPEC_RE="(^|/)(e2e|tests/e2e|cypress/e2e)/(.*/)?[^/]+\.(spec|test|cy)\.[cm]?[jt]sx?$"
+fi
 SENSITIVE_FILE="${E2E_SENSITIVE_FILE:-$HERE/e2e-sensitive.txt}"
 
 # Charge les globs : un par ligne, sans commentaires ni lignes vides.
@@ -43,8 +52,9 @@ case "${1:-}" in
     sed -n '2,/^set -u$/p' "$0" | sed '$d'; exit 0 ;;
 esac
 
-ROOT="${1:-.}"; BASE="${2:-origin/$DEFAULT_BRANCH}"; HEAD_REF="${3:-HEAD}"
+ROOT="${1:-.}"
 ROOT=$(git -C "$ROOT" rev-parse --show-toplevel 2>/dev/null) || { echo "e2e-level : pas un dépôt git : $ROOT" >&2; exit 1; }
+BASE="${2:-origin/${E2E_DEFAULT_BRANCH:-$(resolve_base "$ROOT")}}"; HEAD_REF="${3:-HEAD}"
 g() { git -C "$ROOT" -c core.quotePath=false "$@"; }
 g rev-parse --verify -q "$BASE" >/dev/null || { echo "e2e-level : base introuvable : $BASE" >&2; exit 1; }
 g rev-parse --verify -q "$HEAD_REF" >/dev/null || { echo "e2e-level : head introuvable : $HEAD_REF" >&2; exit 1; }
@@ -84,7 +94,7 @@ elif [ -n "$specs" ]; then
   echo "spec E2E ajouté ou modifié, aucun chemin sensible"
 else
   echo "aucun"
-  echo "aucun chemin sensible, aucun spec E2E touché : le nightly fait foi"
+  echo "aucun chemin sensible, aucun spec E2E touché : pas d'E2E avant PR (nightly ou CI E2E du projet s'il en a un)"
   exit 0
 fi
 [ -z "$specs" ] || printf '%s\n' "$specs" | awk '{print "spec\t" $0}'

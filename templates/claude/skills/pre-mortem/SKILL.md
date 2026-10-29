@@ -3,11 +3,12 @@ name: pre-mortem
 description: |
   Pensée adversaire sur un diff sensible : génère 5-10 edge cases (temporels, état utilisateur
   rare, environnement dégradé, charge, erreurs externes) à transformer en tests AVANT le commit.
-  Path-gating configurable : ne tourne que si le diff touche un chemin sensible (liste dans la
-  section « Path-gating » ci-dessous). Hors chemin sensible, skip explicite (`SKIP-pre-mortem`
-  dans le body du commit). Délègue au sous-agent `pre-mortem-adversaire`. Appelé par /verify
-  avant le commit et par /call-tech-lead en round 2.
+  Path-gating calculé : ne tourne que si `review-level.sh --files` classe un fichier du diff
+  « sensible » (liste réglable, voir section « Path-gating »). Hors chemin sensible, skip explicite
+  (`SKIP-pre-mortem` dans le body du commit). Délègue au sous-agent `pre-mortem-adversaire`. Appelé
+  par /verify sur chemin sensible, par le worker `full-stack-lead` et par /call-tech-lead (phase 6).
 allowed-tools:
+  - Agent
   - Bash
   - Read
   - Grep
@@ -27,21 +28,18 @@ Forcer une passe « pensée adversaire » sur un diff sensible avant le commit. 
 
 ## Path-gating (configurable)
 
-Activer le skill **uniquement** si `git diff origin/{{GIT_DEFAULT_BRANCH}}...HEAD --name-only` contient au moins un fichier sensible. La liste ci-dessous est **à adapter à votre projet** (c'est la seule section à éditer) :
+Activer le skill **uniquement** si le calcul ci-dessous affiche au moins une ligne `sensible`. La liste des chemins sensibles a une source unique, `.claude/hooks/review-level.sh`, réglable via `REVIEW_SENSITIVE_RE` dans `.claude/hooks/config.sh` (ne pas la recopier ici) :
 
-- middleware / proxy et tout code qui lit ou valide la session
-- couche d'accès aux données (clients de base, wrappers de requêtes)
-- `{{DIR_ROUTES_API}}**` (routes et handlers exposés)
-- code d'authentification, de permissions, de paiement
-- clients d'API externes (IA, e-mail, facturation) et feature flags
-- `{{DIR_MIGRATIONS}}**` (migrations de base, si le projet en a)
-- tout fichier qui contient une lecture directe du cookie ou du jeton de session
+```bash
+ROOT=$(git rev-parse --show-toplevel)
+bash "$ROOT/.claude/hooks/review-level.sh" --files "$ROOT" origin/{{GIT_DEFAULT_BRANCH}} HEAD | grep '^sensible'
+```
 
-Hors liste : log explicite `pre-mortem skipped : diff hors chemin sensible. Pour forcer : /pre-mortem --force.`
+Aucune ligne `sensible` : log explicite `pre-mortem skipped : diff hors chemin sensible. Pour forcer : /pre-mortem --force.`
 
 ## Quand l'utiliser
-- Avant chaque commit applicatif sur un chemin sensible (enchaîné par `/verify`).
-- Round 2 de `/call-tech-lead` quand un agent propose un patch sur chemin sensible.
+- Avant chaque commit applicatif sur un chemin sensible (`/verify` le demande, le worker `full-stack-lead` aussi).
+- `/call-tech-lead`, phase 6, pour une tranche qui touche un chemin sensible.
 - Manuellement, après une modif déjà faite mais avant commit.
 
 ## Principes

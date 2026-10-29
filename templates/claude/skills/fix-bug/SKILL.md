@@ -80,13 +80,13 @@ Rapport : `<run>/e2e-rapport.md`, copié du gabarit `.claude/skills/fix-bug/e2e-
 
 Checkpoint `semi` : la note s'affiche en entier dans le chat (dix lignes au plus) ; la cause, un exemple vécu et les options A / B aussi, le rapport `01-investigation.md` en lien, avant « la note te va ? ».
 
-**Et l'E2E qui aurait dû le voir** : dès que le bug est visible à l'écran et que l'audit a classé un test autrement que `hors E2E` ou `environnement`, la note liste aussi l'E2E à corriger (assertion renforcée, données qui montrent le bug, skip retiré, simulation retirée) ou à ajouter (`trou`), avec ce qu'il vérifiera à l'écran (le texte attendu, pas « l'élément est visible »). Le test bas prouve la cause ; l'E2E ferme le trou de la suite. Les deux sont exigés, aucun ne remplace l'autre.
+**Et l'E2E qui aurait dû le voir** : dès que le bug est visible à l'écran et que l'audit a classé un test autrement que `hors E2E` ou `environnement`, la note liste aussi l'E2E à corriger (assertion renforcée, données qui montrent le bug, skip retiré, simulation retirée) ou à ajouter (`trou`), avec ce qu'il vérifiera à l'écran (le texte attendu, pas « l'élément est visible »). Le test bas prouve la cause ; l'E2E ferme le trou de la suite. Les deux sont exigés si le projet a des E2E (sans E2E : un test d'intégration au plus haut niveau disponible), aucun ne remplace l'autre.
 
 ### 3. RED de reproduction, puis le fix
 
 Le test de reproduction est écrit et lancé **avant** le fix. Son message d'échec doit être le bug (la valeur fausse, le crash), pas un import cassé ni une faute de frappe : ce message est recopié tel quel dans le body du commit du fix (preuve du RED). Puis le fix minimal pour vert, refactor, `/verify`.
 
-**L'E2E de la note** suit la même règle : écrit ou corrigé avant le fix, joué (`{{CMD_E2E_LAST_FAILED}}` ou la commande ciblée du projet sur ses fichiers), **rouge** sur le bug (son message d'échec montre le texte faux à l'écran, pas un sélecteur introuvable ni un timeout ; sélecteur vérifié contre le DOM réel), identifiant du run rouge dans la colonne « Sans le correctif » du rapport. Un E2E vert avant le fix ne reproduit pas le bug : le retravailler. `fix-proof.sh` ne le rejoue pas : sa preuve à lui est le couple de runs rouge puis vert du rapport.
+**L'E2E de la note** (projet avec E2E ; sinon le test d'intégration) suit la même règle : écrit ou corrigé avant le fix, joué (`{{CMD_E2E_LAST_FAILED}}` ou la commande ciblée du projet sur ses fichiers), **rouge** sur le bug (son message d'échec montre le texte faux à l'écran, pas un sélecteur introuvable ni un timeout ; sélecteur vérifié contre le DOM réel), identifiant du run rouge dans la colonne « Sans le correctif » du rapport. Un E2E vert avant le fix ne reproduit pas le bug : le retravailler. `fix-proof.sh` ne le rejoue pas : sa preuve à lui est le couple de runs rouge puis vert du rapport.
 
 ### 4. Preuve inversée, avant le commit du fix puis au ship
 
@@ -99,10 +99,10 @@ bash .claude/hooks/fix-proof.sh --test "<commande du test de reproduction>" [--c
 Le script crée un **worktree temporaire**, y remet la version d'avant des fichiers du fix (l'arbre de travail réel n'est jamais touché), lance la commande de test (doit échouer), remet le fix, relance (doit passer), puis écrit `.claude/reviews/fix-proof-<sha7 de HEAD>.md`. Contrat complet en tête du script. Fichiers à passer : les fichiers **source** du fix, jamais le fichier de test (il reste en place pour les deux runs) ; un fichier neuf dont le test dépend se commite avant de jouer la preuve.
 
 - La ligne `preuve inversée ok : …` va dans le body du commit du fix, sous la trace `/verify`. Le dernier message du test sans le fix est relu par le dev et cité dans le body : ce doit être le bug (la valeur fausse), pas « Cannot find module ».
-- Sur une branche de fix, `review-gate.sh` peut exiger une preuve couvrant le diff applicatif ; un fichier du fix retouché après la preuve la périme : rejouer (`--base <commit du fix>~1` si d'autres commits ont suivi).
+- Sur une branche de fix, `review-gate.sh` peut exiger une preuve couvrant le diff applicatif ; un fichier du fix retouché après la preuve la périme : rejouer (avec `--base <sha du commit avant le fix>`).
 - `STOP-TEST-VERT-SANS-FIX` : le test passe sans le fix, il ne reproduit pas le bug → retour à l'étape 3, jamais de commit.
 - `STOP-TEST-ROUGE-AVEC-FIX` : le fix ne corrige pas ce que le test mesure → retour à l'étape 3.
-- **Avant la première passe de review** : la preuve doit être valable pour HEAD. Un correctif de review qui touche un fichier du fix ou le fichier de test → rejouer, et la nouvelle ligne remplace l'ancienne dans le body de PR.
+- **À chaque push** : la preuve doit être valable pour HEAD. **Tout** nouveau commit sur la branche (correctif de review, retouche, rebase) exige de rejouer `fix-proof.sh`, toujours avec `--base <sha du commit avant le fix>` explicite : sans `--base`, le script prend HEAD~1, qui contient déjà le fix. La nouvelle ligne remplace l'ancienne dans le body de PR.
 - Limite assumée : la preuve atteste « rouge sans, vert avec », pas la pertinence du test. Un test qui dépend d'un état hors dépôt (base de données, réseau) mesure l'environnement autant que le fix : le dire dans le body.
 
 ### 5. Review : le palier calculé, plus l'angle altitude

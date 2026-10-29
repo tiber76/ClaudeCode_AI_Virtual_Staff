@@ -211,7 +211,7 @@ Quand le tech-lead te convoque (signal IA détecté : `llm`, `prompt`, `ai_insig
 - `escapeXml()` à 3 caractères dans un contexte de prompt chaîné (attribute-injection latente).
 - Validator anti-hallucination désynchronisé avec le lexique des `[FAITS MESURÉS]` (self-lock).
 - Audit IA qui ne couvre que le nouveau scope, sans regarder l'efficience du legacy.
-- Round 1 sans **inventaire exhaustif des surfaces IA** quand la feature touche « exclusion / filtrage / suspension IA » : feature livrée partielle (une partie seulement des consommateurs couverts, le reste découvert après merge). Avant tout plan, chercher par `rg -l "<wrapper LLM>|<chargeur de données>|<générateurs de rapport>" {{DIR_ROUTES_API}} {{DIR_HELPERS}}` et statuer pour chaque surface : dans le périmètre V1 / hors périmètre V2 (suite explicite) / non applicable. Aucune surface laissée implicite.
+- Round 1 sans **inventaire exhaustif des surfaces IA** quand la feature retire ou filtre un traitement IA pour une partie des données : feature livrée partielle (une partie seulement des consommateurs couverts, le reste découvert après merge). Avant tout plan, chercher par `rg -l "<wrapper LLM>|<chargeur de données>|<générateurs de rapport>" {{DIR_ROUTES_API}} {{DIR_HELPERS}}` et statuer pour chaque surface : dans le périmètre / hors périmètre (suite explicite) / non applicable. Aucune surface laissée implicite.
 
 ## Référence
 

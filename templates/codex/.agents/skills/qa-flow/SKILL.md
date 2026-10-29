@@ -17,13 +17,13 @@ description: |
 Garantir qu'une feature est testée à tous les niveaux (unit + intégration, + E2E au niveau que calcule `.codex/hooks/e2e-level.sh` : voir `$ship-pr` étape 5) avant d'aller en PR. Diagnostiquer et corriger les échecs sans gaspiller de temps.
 
 ## Quand l'utiliser
-- Une feature est codée, on veut valider avant `$review-pr` et `$ship-pr`.
+- Une feature est codée, on veut valider avant `$ship-pr` (qui enchaîne `$review-pr`).
 - Un test E2E a échoué et on veut le corriger proprement.
 - Après un refactoring, pour s'assurer qu'aucune régression.
 
 ## Principes
 1. **Pyramide de tests** : unit (rapide) → intégration → E2E smoke → E2E critical → E2E full. Escalader seulement si les précédents passent.
-2. **Le niveau d'E2E avant PR est calculé, pas jugé** : `aucun`, `specs` ou `smoke` selon `.codex/hooks/e2e-level.sh` (source unique : `$ship-pr` étape 5). Le **nightly rejoue toute la suite et fait foi** : élargir à `critical` ou à la suite complète seulement sur demande de l'utilisateur.
+2. **Le niveau d'E2E avant PR est calculé, pas jugé** : `aucun`, `specs` ou `smoke` selon `.codex/hooks/e2e-level.sh` (source unique : `$ship-pr` étape 5). Si le projet a un nightly E2E, il fait foi ; sinon `aucun` laisse les E2E à la CI ou à l'humain (à dire dans la PR). Élargir à `critical` ou à la suite complète seulement sur demande de l'utilisateur.
 3. **Runner détaché si le projet en a un** : un job E2E de plusieurs minutes lancé en direct dans la session meurt au kill du harnais, et deux runs simultanés se marchent dessus. Attente en arrière-plan, jamais de `sleep` au premier plan.
 4. **Ne JAMAIS relancer la suite E2E complète pour fixer 2-3 tests** : `{{CMD_E2E_LAST_FAILED}}` en boucle (cf. §4).
 5. **Diagnostiquer avant de fixer** : lire le test + le source + les logs avant de modifier quoi que ce soit.

@@ -32,7 +32,7 @@ Ce fichier contient les **règles transverses** (output, compaction, délégatio
 
 - Aucun `git push` ni `gh pr create` sans rapport de relecture `.claude/reviews/<sha de HEAD>.md` au palier calculé depuis le diff (hook `review-gate`). Après chaque nouveau commit, relecture à refaire.
 - `/ship-pr` enchaîne la relecture ; `/review-pr` reste invocable seul pour auto-challenger un diff.
-- **Bypass** (`SKIP-review-pr` dans le corps du commit) : uniquement sur instruction explicite de l'utilisateur. Aucun bypass silencieux.
+- **Bypass** (ligne `SKIP-review-pr: <raison>` dans le corps du commit) : uniquement sur instruction explicite de l'utilisateur. Aucun bypass silencieux.
 
 ## Discipline de développement
 
@@ -105,7 +105,7 @@ Quand la compaction se déclenche, **préserver impérativement** les éléments
 3. **Décisions prises pendant la session non encore commitées** (choix produit, copy validée, arbitrage technique).
 4. **Liste des fichiers édités** (path absolu) + résumé 1 ligne par fichier de l'intention.
 5. **Numéros de PR / issues** mentionnés — pour le cleanup post-merge.
-6. **Verdicts d'agents `/call-tech-lead`** s'ils ne sont pas écrits dans `.claude/call-tech-lead-runs/`.
+6. **Verdicts d'agents `/call-tech-lead`** s'ils ne sont pas écrits dans `.claude/call-call-tech-lead-runs/`.
 
 ### 🟡 Bon à garder (utile mais reconstructible)
 

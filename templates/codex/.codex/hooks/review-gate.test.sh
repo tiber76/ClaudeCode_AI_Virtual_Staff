@@ -44,6 +44,7 @@ echo more >> "$W/README.md"; G commit -qam doc
 gate 0 "git status"                                 "commande sans push ignorée"
 gate 0 "git -C $W push origin --delete work"        "suppression de branche ignorée"
 gate 0 "git -C $W push --tags"                      "push de tags ignoré"
+gate 0 "git commit -m 'doc: git push expliqué'"     "un commit qui cite un push n'est pas un push"
 
 echo "Rapport absent ou invalide"
 gate 2 "$PUSH_CMD"                                  "aucun rapport : bloqué"
@@ -82,10 +83,29 @@ echo "Bypass"
 nouvelle_branche
 echo more >> "$W/README.md"; G commit -qam doc
 gate 2 "$PUSH_CMD"                                  "sans rapport : bloqué"
-G commit -q --amend -m "doc" -m "SKIP-review-pr sur instruction de l'utilisateur"
-gate 0 "$PUSH_CMD"                                  "SKIP-review-pr en début de ligne : passe"
+G commit -q --amend -m "doc" -m "SKIP-review-pr: sur instruction de l'utilisateur"
+gate 0 "$PUSH_CMD"                                  "SKIP-review-pr: <raison> en début de ligne : passe"
 G commit -q --amend -m "doc" -m "on ne doit pas écrire SKIP-review-pr au milieu d'une phrase"
 gate 2 "$PUSH_CMD"                                  "simple mention de la convention : bloqué"
+G commit -q --amend -m "doc" -m "SKIP-review-pr est réservé aux instructions humaines"
+gate 2 "$PUSH_CMD"                                  "phrase qui commence par la convention : bloqué"
+
+echo "Formes de commande"
+G commit -q --amend -m "doc"
+gate 2 "cd $W && git push origin work"              "cd <dépôt> && git push : jugé"
+gate 2 "bash -c \"git -C $W push origin work\""    "bash -c \"git push\" : jugé"
+gate 2 "git -C $W -c user.name=x push origin work"  "option globale -c : jugé"
+gate 2 "git --no-pager -C $W push origin work"      "--no-pager : jugé"
+gate 2 "/usr/bin/git -C $W push origin work"        "chemin absolu de git : jugé"
+gate 2 "git -C $W push origin work --tags"          "branche + --tags : jugé"
+gate 2 "gh pr create --title 'feat :tada: x' --body '--delete'" "titre de PR avec « :x » ou --delete : jugé"
+gate 2 "GIT=git; \$GIT push origin work"            "push via variable : refusé"
+rapport docs oui
+gate 2 "git -C $W commit -qam x && git -C $W push origin work" "commit puis push dans le même appel : refusé"
+gate 0 "$PUSH_CMD"                                  "rapport valable : passe"
+(cd "$W" && bash "$GATE" --check >/dev/null 2>&1) && ok "--check depuis le dépôt : passe avec rapport" || bad "--check" "devait rendre 0"
+echo more >> "$W/README.md"; G commit -qam doc3
+(cd "$W" && bash "$GATE" --check >/dev/null 2>&1); [ $? = 2 ] && ok "--check sans rapport : bloqué" || bad "--check" "devait rendre 2"
 
 echo "Payload illisible"
 printf 'pas du json git push' | bash "$GATE" >/dev/null 2>&1; [ $? = 2 ] && ok "payload illisible ressemblant à un push : fermé" || bad "payload illisible" "devait rendre 2"

@@ -12,7 +12,11 @@
 #    chaque push est jugé sur sa destination. Exit 2 + message sur stderr = bloqué.
 #      - `<remote> <src>:<dst>` ou `<remote> <dst>` : destination explicite ;
 #      - sans référence : la branche courante part (refusée si protégée) ;
-#      - `--all`, `--mirror` : refusés (ils poussent aussi les branches protégées).
+#      - `--all`, `--mirror` : refusés (ils poussent aussi les branches protégées) ;
+#      - push via une commande indéterminée ($GIT, eval) : refusé (on ne sait pas ce qui part).
+#    Formes reconnues : celles de parse_push_cmd (review-dir.sh) — -C, -c, options globales,
+#    « cd <dossier> && git push », « bash -c "git push" », chemin absolu de git.
+#    Sans hook (Codex, terminal) : push-target-guard.sh --check [dossier] juge « git push » depuis ce dossier.
 #
 # 2. Hook git pre-push (stdin = lignes `<réf locale> <sha local> <réf distante> <sha distant>`).
 #    Sortie : EXACTEMENT une ligne, code de sortie toujours 0 (le verdict est la ligne) :
@@ -28,7 +32,12 @@ unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX GIT_COMMON_DIR
 
 . "$(cd "$(dirname "$0")" && pwd)/review-dir.sh"
 
-INPUT=$(cat)
+if [ "${1:-}" = "--check" ]; then
+  INPUT=$(jq -n --arg d "${2:-$PWD}" '{tool_input:{command:"git push"},cwd:$d}' 2>/dev/null) \
+    || { echo "🛑 push-target-guard --check : jq requis" >&2; exit 2; }
+else
+  INPUT=$(cat)
+fi
 FIRST=$(printf '%s' "$INPUT" | tr -d '[:space:]' | cut -c1)
 
 # ── Mode 1 : PreToolUse ──────────────────────────────────────────────────────────────────────
@@ -51,33 +60,30 @@ if [ "$FIRST" = "{" ]; then
     exit 2
   }
 
-  while IFS= read -r seg || [ -n "$seg" ]; do
-    # tokens du segment ; on cherche « git [-C dir] push »
-    # shellcheck disable=SC2206
-    toks=($seg)
-    n=${#toks[@]}; i=0; dir=""
-    while [ "$i" -lt "$n" ] && [ "${toks[$i]}" != "git" ]; do i=$((i+1)); done
-    [ "$i" -lt "$n" ] || continue
-    i=$((i+1))
-    if [ "${toks[$i]:-}" = "-C" ]; then dir=${toks[$((i+1))]:-}; i=$((i+2)); fi
-    [ "${toks[$i]:-}" = "push" ] || continue
-    i=$((i+1))
-    dir=$(printf '%s' "$dir" | tr -d "\"'")
-    repo_dir="$CWD"; [ -z "$dir" ] || { [ -d "$dir" ] && repo_dir="$dir"; }
-    { [ -n "$repo_dir" ] && [ -d "$repo_dir" ]; } || repo_dir="$PWD"
+  TAB=$(printf '\t')
+  while IFS="$TAB" read -r kind repo_dir args; do
+    case "$kind" in
+      opaque) block "push lancé par une commande indéterminée (variable, eval) : destination inconnue" ;;
+      push) ;;
+      *) continue ;;
+    esac
+    { [ -n "$repo_dir" ] && [ -d "$repo_dir" ]; } || repo_dir="${CWD:-$PWD}"
     positional=()
+    # shellcheck disable=SC2206
+    toks=($args); n=${#toks[@]}; i=0
     while [ "$i" -lt "$n" ]; do
-      t=$(printf '%s' "${toks[$i]}" | tr -d "\"'")
+      t=${toks[$i]}
       case "$t" in
         --all|--mirror) block "« push $t » pousse aussi les branches protégées" ;;
-        -o|--push-option) i=$((i+1)) ;;   # l'option prend un argument
+        -o|--push-option|--repo|--receive-pack|--exec) i=$((i+1)) ;;   # l'option prend un argument
         -*) ;;
         *) positional+=("$t") ;;
       esac
       i=$((i+1))
     done
     # positional[0] = remote, le reste = références
-    refs=("${positional[@]:1}")
+    refs=()
+    [ "${#positional[@]}" -le 1 ] || refs=("${positional[@]:1}")
     if [ "${#refs[@]}" -eq 0 ]; then
       cur=$(git -C "$repo_dir" branch --show-current 2>/dev/null || true)
       if [ -n "$cur" ] && is_protected "$cur"; then block "la branche courante « $cur » est protégée"; fi
@@ -95,7 +101,9 @@ if [ "$FIRST" = "{" ]; then
       fi
       if [ -n "$dst" ] && is_protected "$dst"; then block "destination « $dst » protégée"; fi
     done
-  done < <(printf '%s' "$CMD" | tr ';|&' '\n')
+  done <<EOF_ACTIONS
+$(parse_push_cmd "$CMD" "${CWD:-$PWD}")
+EOF_ACTIONS
   exit 0
 fi
 

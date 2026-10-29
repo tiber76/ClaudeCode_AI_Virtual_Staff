@@ -138,11 +138,14 @@
 - Ne jamais supposer que "ça ne casse rien" — toujours vérifier
 - Si un test échoue, le corriger **avant** de continuer
 
-### ⚠️ Règle E2E avant PR — obligatoire
-> **Avant toute PR, lancer la suite E2E complète :**
+### ⚠️ Règle E2E avant PR — niveau calculé
+
+> **Le niveau d'E2E avant PR est calculé, pas jugé** : `bash .claude/hooks/e2e-level.sh` renvoie `aucun`, `specs` ou `smoke` selon le diff (`smoke` si un chemin sensible est touché, `specs` si seuls des specs E2E sont ajoutés ou modifiés, `aucun` sinon). L'agent applique le verdict, il ne le discute pas.
 > ```bash
 > {{E2E_RUN_COMMAND}}
 > ```
+> Si le projet a un nightly E2E, il rejoue toute la suite et fait foi ; sinon, `aucun` signifie que les E2E restent à la charge de la CI ou de l'humain, et la PR le dit. Projet sans E2E : règle sans objet.
+>
 > **Si des tests échouent**, ne relancer **que les tests failed** :
 > ```bash
 > {{E2E_LAST_FAILED_COMMAND}}
@@ -362,6 +365,9 @@ Chaque nouvelle UI qui affiche des données doit couvrir :
 
 > Cette section grandit via `/retro` après chaque feature non-triviale ou bug complexe.
 > Au démarrage du projet, elle est vide — c'est normal.
+
+**Index** : une ligne par piège — `- <thème> · <titre>` (à compléter à chaque ajout ; les skills `/retro` et `/review-pr` s'y réfèrent).
+
 
 ### ⚠️ (Template de piège)
 - **Symptôme** : ce qu'on observe

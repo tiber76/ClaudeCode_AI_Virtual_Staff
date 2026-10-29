@@ -66,9 +66,9 @@ Les phases ci-dessous documentent le fonctionnement manuel et les vérifications
   ```
   ton-projet/
   ├── .claude/
-  │   ├── agents/           ← 13 fichiers .md
-  │   ├── skills/           ← 16 dossiers avec SKILL.md
-  │   ├── commands/         ← 16 fichiers .md (un par skill, pour l'autocomplétion /<nom>)
+  │   ├── agents/           ← 18 fichiers .md
+  │   ├── skills/           ← 23 dossiers avec SKILL.md
+  │   ├── commands/         ← 23 fichiers .md (un par skill, pour l'autocomplétion /<nom>)
   │   └── settings.local.json
   ├── backlog.md
   └── docs/

@@ -58,7 +58,7 @@ Ce que tu auras à faire : <à priori, …> | rien de prévu
 ```
 
 - 🟥 **bloque la suite** : rien n'avance sans réponse. 🟧 **avant le merge** : rien ne bloque maintenant, mais la PR ne doit pas être mergée sans.
-- Les cinq rubriques sont obligatoires. Un « Comment » doit se suivre sans rien deviner : chemin exact, écran, commande à copier, fichier nommé. Une décision donne ses options avec leur conséquence visible (« le chiffre affiché à un client passerait de 12 à 15 »), pas leur mécanisme.
+- Les cinq rubriques sont obligatoires. Un « Comment » doit se suivre sans rien deviner : chemin exact, écran, commande à copier, fichier nommé. Une décision donne ses options avec leur conséquence visible (« le total affiché sur la facture passerait de 12 à 15 »), pas leur mécanisme.
 - Le bloc accompagne la question posée à l'utilisateur quand il y en a une, il ne la remplace pas.
 - Jamais une action demandée dans un paragraphe : si l'utilisateur doit faire quelque chose, c'est un bloc.
 
@@ -144,11 +144,11 @@ Puis seulement les preuves, en une ligne (tests verts, review, typecheck).
 
 La question 1 se rate facilement : on croit expliquer alors qu'on paraphrase le correctif. Elle accompagne **chaque étape livrée** (lot, commit significatif, migration jouée, PR), sans qu'on la demande. Cinq ingrédients, tous obligatoires :
 
-1. **Le texte réel que lit le client**, cité tel quel, en bloc. Pas « le libellé était faux » mais `> Temps moyen de recrutement : 25 semaines`. Ce que l'œil voit à l'écran, pas ce que le code contient.
-2. **Un exemple chiffré et nommé** : « un client qui livrait en 25 jours ». Jamais « dans certains cas ».
+1. **Le texte réel que lit le client**, cité tel quel, en bloc. Pas « le libellé était faux » mais `> Délai de livraison estimé : 25 semaines`. Ce que l'œil voit à l'écran, pas ce que le code contient.
+2. **Un exemple chiffré et nommé** : « une cliente dont la commande partait en 25 jours ». Jamais « dans certains cas ».
 3. **Une analogie du quotidien**, hors informatique : un compteur gradué en km/h qui affiche des m/s. C'est ce qui rend l'explication mémorisable une semaine plus tard.
 4. **Le « pourquoi il fallait toucher ça »**, pas le mécanisme : la raison d'être, pas l'implémentation.
-5. **Un chiffre qui recadre l'ampleur**, dès qu'il est disponible : « un seul compte avait réglé une cible : le défaut touchait tout le monde sauf un ». Une conséquence sans ordre de grandeur ne se hiérarchise pas.
+5. **Un chiffre qui recadre l'ampleur**, dès qu'il est disponible : « un seul compte avait changé ce réglage : le défaut touchait tout le monde sauf un ». Une conséquence sans ordre de grandeur ne se hiérarchise pas.
 
 **Zéro jargon interne.** Bannis en restitution : dénominateur, effectif, empreinte, garde-fou, sentinelle, invariant, seuil permissif, fixture. S'ils sont indispensables, les traduire à la première occurrence.
 

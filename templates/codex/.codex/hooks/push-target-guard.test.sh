@@ -28,6 +28,20 @@ hook 0 "git push origin --delete feature/x"        "suppression d'une branche de
 hook 0 "git status"                                "commande sans push ignorée"
 hook 2 "git push origin main"                      "destination main bloquée"
 hook 2 "git push origin develop"                   "destination develop bloquée"
+hook 2 "git push origin master"                    "destination master bloquée (défaut)"
+hook 2 "bash -c \"git push origin main\""           "bash -c \"git push main\" bloqué"
+hook 2 "/usr/bin/git push origin main"             "chemin absolu de git bloqué"
+hook 2 "git -c user.name=x push origin main"       "option globale -c bloquée"
+hook 2 "git --no-pager push origin main"           "--no-pager bloqué"
+hook 2 "GIT=git; \$GIT push origin main"            "push via variable refusé"
+# cd vers un dépôt dont la branche courante est protégée
+MAINREPO="$TMP/mainrepo"; mkdir -p "$MAINREPO"
+git -C "$MAINREPO" init -q -b main
+git -C "$MAINREPO" -c user.email=t@t -c user.name=t commit -q --allow-empty -m init
+hook 2 "cd $MAINREPO && git push"                  "cd <dépôt sur main> && git push bloqué"
+hook 0 "cd $REPO && git push"                      "cd <dépôt de travail> && git push passe"
+(cd "$MAINREPO" && bash "$GUARD" --check >/dev/null 2>&1); [ $? = 2 ] && ok "--check sur main : bloqué" || bad "--check" "devait rendre 2"
+(cd "$REPO" && bash "$GUARD" --check >/dev/null 2>&1) && ok "--check sur une branche de travail : passe" || bad "--check" "devait rendre 0"
 hook 2 "git push origin feature/x:develop"         "src:dst vers develop bloqué"
 hook 2 "git push origin HEAD:refs/heads/main"      "refs/heads/main bloqué"
 hook 2 "git push origin :develop"                  "suppression de develop bloquée"

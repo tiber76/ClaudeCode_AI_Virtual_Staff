@@ -11,6 +11,7 @@ description: |
   profils de coût (`--depth=lean|standard|full`). Produit un TRANSCRIPT.md détaillé.
   Jamais de merge sans ordre explicite.
 allowed-tools:
+  - SendMessage
   - Bash
   - Read
   - Write
@@ -53,7 +54,7 @@ Orchestrer une équipe virtuelle d'experts sur {{PROJECT_NAME}} ({{PROJECT_DESCR
 
 Garde-fou token : jamais d'agent « au cas où », chacun a un signal explicite de routing. `full-stack-lead` + `qa` forment le noyau minimal.
 
-**Run multi-tranches** (US découpée) : chaque tranche est portée par un **worker à contexte frais**, la review et la PR étant jouées par l'orchestrateur, et **Tn+1 ne démarre qu'après merge de Tn**. En `--mode=auto`, ajouter à la demande « merge chaque tranche après review verte » autorise le merge autonome des tranches de cette US ; sans cette phrase, le run s'arrête proprement après la PR de T1.
+**Run multi-tranches** (US découpée) : chaque tranche est portée par un **worker à contexte frais**, la review et la PR étant jouées par l'orchestrateur, et **Tn+1 ne démarre qu'après merge de Tn**. Le merge n'est jamais autonome, quel que soit le mode : le run s'arrête après l'ouverture de la PR de Tn et l'orchestrateur attend l'ordre de merge explicite de l'utilisateur avant de lancer Tn+1.
 
 ## L'équipe virtuelle
 

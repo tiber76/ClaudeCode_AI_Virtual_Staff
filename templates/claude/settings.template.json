@@ -36,12 +36,12 @@
           {
             "type": "command",
             "timeout": 15,
-            "command": "if [ -x \"$CLAUDE_PROJECT_DIR/.claude/hooks/review-gate.sh\" ]; then exec \"$CLAUDE_PROJECT_DIR/.claude/hooks/review-gate.sh\"; fi"
+            "command": "if [ -x \"$CLAUDE_PROJECT_DIR/.claude/hooks/review-gate.sh\" ]; then exec \"$CLAUDE_PROJECT_DIR/.claude/hooks/review-gate.sh\"; fi; if grep -qE '(git|gh)[^\"]*(push|pr create)'; then echo \"🛑 hook review-gate.sh absent ou non exécutable (chmod +x .claude/hooks/*.sh) : push refusé\" >&2; exit 2; fi"
           },
           {
             "type": "command",
             "timeout": 15,
-            "command": "if [ -x \"$CLAUDE_PROJECT_DIR/.claude/hooks/push-target-guard.sh\" ]; then exec \"$CLAUDE_PROJECT_DIR/.claude/hooks/push-target-guard.sh\"; fi"
+            "command": "if [ -x \"$CLAUDE_PROJECT_DIR/.claude/hooks/push-target-guard.sh\" ]; then exec \"$CLAUDE_PROJECT_DIR/.claude/hooks/push-target-guard.sh\"; fi; if grep -qE '(git|gh)[^\"]*(push|pr create)'; then echo \"🛑 hook push-target-guard.sh absent ou non exécutable (chmod +x .claude/hooks/*.sh) : push refusé\" >&2; exit 2; fi"
           }
         ]
       }

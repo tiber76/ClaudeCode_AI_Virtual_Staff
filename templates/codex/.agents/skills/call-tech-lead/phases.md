@@ -127,12 +127,12 @@ Un sous-agent peut avoir commité ailleurs ou sur une mauvaise base ; une PR emp
 
 ### Séquence après le dernier commit
 
-Dès le dernier commit du dernier lot (visible dans `git log`, sans attendre le retour), en parallèle :
+Dès le dernier commit du dernier lot (visible dans `git log`, sans attendre le retour), avec `ROOT=$(git rev-parse --show-toplevel)`, en parallèle :
 - la **suite entière** de l'espace touché (`{{CMD_UNIT_TEST}}`, `{{CMD_INT_TEST}}`) en arrière-plan ;
-- l'**E2E au niveau calculé** par `bash $CLAUDE_PROJECT_DIR/.codex/hooks/e2e-level.sh <abs> origin/{{GIT_DEFAULT_BRANCH}} HEAD` (`aucun`, `specs` ou `smoke` ; jamais jugé par l'agent ; un seul run E2E à la fois, tous worktrees confondus) ;
+- l'**E2E au niveau calculé** par `bash "$ROOT/.codex/hooks/e2e-level.sh" <abs> origin/{{GIT_DEFAULT_BRANCH}} HEAD` (`aucun`, `specs` ou `smoke` ; jamais jugé par l'agent ; un seul run E2E à la fois, tous worktrees confondus) ;
 - le **test manuel local** (Phase 7, point 4), pour que la review le voie ;
 - le **smoke réel des hypothèses** de la section 6.1 du plan, avant la première review : un défaut trouvé là repart au worker sans passe de review ;
-- la passe **`cso`** (`model: "opus"` explicite) si le diff touche un chemin sensible (liste : `bash $CLAUDE_PROJECT_DIR/.codex/hooks/review-level.sh --sensitive`, source unique, jamais recopiée).
+- la passe **`cso`** (`model: "opus"` explicite) si le diff touche un chemin sensible (liste : `bash "$ROOT/.codex/hooks/review-level.sh" --sensitive`, source unique, jamais recopiée).
 
 La review ne part qu'une fois la suite verte et ces passes jouées ; un rouge de la suite est un finding hors review.
 
@@ -142,7 +142,7 @@ Jouée par l'orchestrateur : `Skill(skill="review-pr")`, pipeline complet, cherc
 
 ### Boucle de correction
 
-🔴 ou 🟠 → `semi` : relance du worker sans question (hors cas « à trancher » ci-dessous) ; `auto` : autonome. On relance le **worker de la tranche** (`SendMessage` à son identifiant, contexte intact) ; un worker frais seulement s'il dépasse ≈ 300 k de contexte ou ne répond plus (un worker frais met 20 à 40 min à relire plan, brief et code avant son premier commit). **Un seul worker de correction par passe**, tous les findings ouverts dans son mandat ; le code ne s'écrit jamais dans le contexte de l'orchestrateur. Zéro dette de review : jamais de push avec un finding ouvert.
+🔴 ou 🟠 → `semi` : relance du worker sans question (hors cas « à trancher » ci-dessous) ; `auto` : autonome. On relance le **worker de la tranche** (`SendMessage` à son identifiant, contexte intact) ; un worker frais seulement si son contexte est saturé ou s'il ne répond plus (un worker frais doit relire plan, brief et code avant son premier commit, c'est long). **Un seul worker de correction par passe**, tous les findings ouverts dans son mandat ; le code ne s'écrit jamais dans le contexte de l'orchestrateur. Zéro dette de review : jamais de push avec un finding ouvert.
 
 **Concevoir le correctif avant de le coder** : pour tout 🔴 et tout 🟠 sur un chemin sensible, l'orchestrateur écrit dans le mandat trois lignes par finding : (a) l'**invariant** que le correctif rétablit, en une phrase ; (b) le **cas symétrique ou inverse** du scénario (et la limite du mécanisme existant que le correctif emprunte : plafond, throttle, clé de dédup) — pour un contrôle de chemin, ses trois bornes : égal à la racine, sous elle, par un alias ; (c) le **test** qui compose les vraies fonctions du projet, doublures posées seulement à la frontière système (disque, réseau, processus), jamais sur une fonction du projet. Sans ces lignes le mandat ne part pas : un correctif écrit vite sur un mandat de 10 lignes est la première source du 🔴 suivant. Le worker recopie la ligne CONCEPTION dans le body du commit qui corrige.
 
@@ -176,7 +176,7 @@ Par tranche :
 1. **Review verte** : rapport `.codex/reviews/<sha HEAD>.md` présent, 0 🔴 et 0 🟠 ouvert. Ne pas rejouer une passe sur le même sha. Sinon retour à la boucle de la Phase 6.
 2. **`cso` passe finale** : jouée en Phase 6 avant la première review ; ici on vérifie seulement qu'elle a rendu sans bloquant. gpt-5.5 explicite : elle relit le diff avec la checklist sécurité complète, **indépendamment des findings du Round 1**, puis valide que les bloquants du Round 1 sont traités. Sa correction est un commit du worker, relu par la review. Elle se rejoue sur le delta d'un correctif de review qui touche un chemin sensible.
 3. **Pyramide de tests** jouée par l'orchestrateur en Séquence et **consignée** dans `08-qa-Tn.md` (un champ manquant ou « non vérifié » se recopie tel quel, jamais complété). `$qa-flow` corrige un échec en `--last-failed` sans relancer la suite complète. Un correctif de test est un commit : retour à la boucle.
-4. **Test manuel local** (si la tranche touche l'interface ou un parcours utilisateur) : l'orchestrateur joue le parcours des critères d'acceptation sur le serveur local, dans un vrai navigateur (règle : `.agents/skills/_partage/test-manuel-local.md`), consigné dans `08-qa-Tn.md` avec un statut ✓ / ✗ / non joué (raison) / sans objet (raison). Un ✗ repart au worker (« Correction Tn »).
+4. **Test manuel local** (quand `.agents/skills/_partage/test-manuel-local.md`, source unique, l'exige pour cette tranche) : l'orchestrateur joue le parcours des critères d'acceptation sur le serveur local, dans un vrai navigateur (règle : `.agents/skills/_partage/test-manuel-local.md`), consigné dans `08-qa-Tn.md` avec un statut ✓ / ✗ / non joué (raison) / sans objet (raison). Un ✗ repart au worker (« Correction Tn »).
 
 ---
 

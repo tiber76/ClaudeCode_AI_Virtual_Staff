@@ -55,7 +55,7 @@ Vérifier chaque garde de la politique ci-dessus et annoncer le résultat. **Si 
 
 ### 2. Pré-cleanup best-effort (avant teardown)
 
-- **Dossiers de run gitignorés** (`.codex/call-tech-lead-runs/`, `.codex/reviews/`) : les archiver hors du worktree avant son retrait (`mkdir -p ~/.codex-archives/<worktree> && cp -R …`). Une archive impossible **bloque** le teardown : mieux vaut un worktree de plus qu'un run perdu.
+- **Dossiers de run gitignorés** (`.codex/runs/call-tech-lead/`, `.codex/reviews/`) : les archiver hors du worktree avant son retrait (`mkdir -p ~/.codex-archives/<worktree> && cp -R …`). Une archive impossible **bloque** le teardown : mieux vaut un worktree de plus qu'un run perdu.
 - **Serveur dev du worktree** : arrêter le serveur de développement lancé depuis ce worktree (`{{CMD_DEV}}`), en ciblant le processus par son port ou son répertoire de travail ; jamais un serveur d'une session parallèle.
 - **Fichiers temporaires de la session** : supprimer dans `/tmp` les fichiers qui portent le nom du worktree (messages de commit, corps de PR) ; jamais un dossier, jamais un fichier d'une autre session.
 - **Comptes ou données de test créés par la session** : lister ce qui a été créé pendant la session et le nettoyer avec l'outil prévu par le projet ; sans outil, le lister dans les restes à faire.
