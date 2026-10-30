@@ -56,14 +56,29 @@ envoi ok    "branche avec rapport : part"                             git push -
 remote_a feature/x && ok "la branche est sur le remote" || bad "la branche est sur le remote" "absente"
 envoi refus "destination develop, même reviewée : refusée"            git push -q origin HEAD:develop
 envoi ok    "effacement d'une branche de travail : passe"             git push -q origin --delete feature/x
-G tag v0.1
-envoi ok    "tag : passe"                                             git push -q origin v0.1
+G tag -a v0.1 -m v0.1
+envoi ok    "tag annoté sur un commit reviewé : passe"               git push -q origin v0.1
+echo t >> "$W/README.md"; G commit -qam non-reviewe; G tag v0.2
+envoi refus "tag sur un commit non reviewé : refusé"                 git push -q origin v0.2
 
 echo "Worktree"
 G worktree add -q -b feature/wt "$TMP/wt" develop 2>/dev/null
 mkdir -p "$TMP/wt/.claude/hooks"; cp -p "$HOOKS"/* "$TMP/wt/.claude/hooks/"
 echo wt >> "$TMP/wt/README.md"; git -C "$TMP/wt" -c user.email=t@t -c user.name=t commit -qam wt
 (cd "$TMP/wt" && git push -q origin feature/wt) >/dev/null 2>&1; [ $? != 0 ] && ok "worktree sans rapport : refusé (hook partagé)" || bad "worktree" "devait être refusé"
+
+G worktree add -q -b feature/ancien "$TMP/ancien" develop 2>/dev/null   # worktree sans les fichiers du kit
+echo a >> "$TMP/ancien/README.md"; git -C "$TMP/ancien" -c user.email=t@t -c user.name=t commit -qam ancien
+(cd "$TMP/ancien" && git push -q origin feature/ancien) >/dev/null 2>"$TMP/err"
+grep -q "aucun rapport" "$TMP/err" && ok "worktree sans le kit : hook de l'installation joué (refus pour défaut de rapport)" || bad "worktree sans le kit" "$(head -c 200 "$TMP/err")"
+
+echo "Tag de release"
+G checkout -q develop; G merge -q --no-ff -m "release" feature/x 2>/dev/null
+G push -q --no-verify origin HEAD:refs/heads/main 2>/dev/null   # le remote reçoit main hors porte, comme un merge de PR
+G fetch -q origin
+G tag v1.0
+envoi ok    "tag sur un commit déjà présent sur le remote : passe"   git push -q origin v1.0
+G checkout -q feature/x
 
 echo "Hook du kit manquant"
 mv "$W/.claude/hooks/pre-push" "$TMP/pre-push.bak"

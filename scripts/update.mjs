@@ -10,6 +10,7 @@ import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { access, cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { constants } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -329,6 +330,19 @@ async function main() {
     }
 
     const log = await executeActions(planned);
+
+    // Hook git pre-push : (re)branché apres chaque update, sinon plus rien ne controle les push (Codex surtout).
+    for (const dir of [".claude", ".codex"]) {
+      const script = join(targetRoot, dir, "hooks", "install-git-hooks.sh");
+      if (!(await exists(script))) continue;
+      const result = spawnSync("bash", [script], { cwd: targetRoot, encoding: "utf8" });
+      const out = `${result.stdout || ""}${result.stderr || ""}`.trim().replace(/\n+/g, " ");
+      log.push(result.status === 0
+        ? `hook git pre-push : ${out}`
+        : `hook git pre-push NON branche — lancer \`bash ${dir}/hooks/install-git-hooks.sh\` : ${out}`);
+      if (result.status !== 0) console.log(`\n⚠️  hook git pre-push non branche : ${out}`);
+      break;
+    }
 
     const report = [
       "# Virtual Staff Kit — update report",

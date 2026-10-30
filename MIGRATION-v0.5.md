@@ -101,4 +101,6 @@ Adapte `.claude/hooks/e2e-sensitive.txt` (chemins qui déclenchent le smoke E2E)
 
 **Je ne veux pas des hooks.** Ne câble pas l'étape 3 et retire `.git/hooks/pre-push` : les skills fonctionnent sans, la porte n'est alors qu'une consigne.
 
+**Qu'est-ce que la porte n'arrête pas ?** Un humain qui tape `--no-verify`, ou qui écrit lui-même un rapport ou une ligne `SKIP-review-pr`. Côté agent, le hook Claude Code refuse les façons usuelles de couper le hook git dans la commande du push (`--no-verify` et ses abréviations, `core.hooksPath`, `GIT_CONFIG_*`, `HUSKY=0`, `--git-dir`, `git send-pack`) et relit l'état réel du dépôt avant chaque push ; il n'empêche pas un agent de réécrire les scripts du kit eux-mêmes — ces chemins imposent le palier de review `complet`. Un commit déjà présent sur un remote (tag de release sur `main`, branche déjà poussée) passe sans rapport.
+
 **J'utilise Codex.** Le contrôle des push est un hook git : il s'applique à Codex comme à Claude Code. Les scripts sont dans `.codex/hooks/` ; brancher le hook avec `bash .codex/hooks/install-git-hooks.sh`. Seule différence : Codex n'a pas d'équivalent du hook PreToolUse, donc rien n'y empêche l'agent de taper `--no-verify` — `AGENTS.md` le lui interdit.

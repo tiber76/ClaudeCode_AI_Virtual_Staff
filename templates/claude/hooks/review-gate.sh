@@ -23,7 +23,7 @@
 #      review-level.sh calcule pour ce commit (le palier ne se négocie pas : l'agent ne peut pas s'accorder le léger).
 #   4. sur une branche de correctif de bug (FIX_BRANCH_RE, défaut `^fix/`) : la preuve inversée
 #      `<REVIEW_DIR>/fix-proof-<sha7>.md` écrite par fix-proof.sh pour ce commit (ligne **HEAD** complète + `Verdict : ok`).
-# Un commit déjà contenu dans la base (origin/<base>) n'apporte rien de neuf : il passe sans rapport.
+# Un commit déjà présent sur un remote (base, main après une release…) n'apporte rien de neuf : il passe sans rapport.
 # Limite assumée : la porte lit le sha, la grammaire du verdict et le palier ; elle ne prouve pas que les
 # angles du palier ont été joués, ni qui a écrit le rapport. La ligne **Coût** du rapport en est la trace.
 #
@@ -105,9 +105,10 @@ check_commit() {
   local ROOT="$1" SHA="$2" BRANCH="${3:-}" REPORT CAUSE
   set_base "$ROOT"
   [ -n "$BRANCH" ] || BRANCH="HEAD détaché"
-  # Déjà dans la base : rien de neuf ne part avec ce commit.
-  if git -C "$ROOT" rev-parse --verify -q "$BASE_REF" >/dev/null 2>&1 \
-     && git -C "$ROOT" merge-base --is-ancestor "$SHA" "$BASE_REF" 2>/dev/null; then
+  # Déjà sur un remote (base, main d'une release, branche déjà poussée) : rien de neuf ne part avec ce commit.
+  if git -C "$ROOT" cat-file -e "$SHA^{commit}" 2>/dev/null \
+     && [ -n "$(git -C "$ROOT" for-each-ref --count=1 refs/remotes)" ] \
+     && [ -z "$(git -C "$ROOT" rev-list -n 1 "$SHA" --not --remotes 2>/dev/null)" ]; then
     return 0
   fi
   # Bypass : instruction explicite de l'utilisateur, tracée dans le body du commit.
@@ -169,17 +170,23 @@ CWD=${CWD:-$PWD}
 
 refuse() { echo "🛑 review-gate : $1" >&2; exit 2; }
 
-# 1. Rien ne désactive le hook git pre-push.
-if printf '%s' "$CMD" | grep -qiE '(-c[[:space:]]*|config[[:space:]].*)core\.hookspath|GIT_CONFIG_(PARAMETERS|COUNT)'; then
-  refuse "la commande règle core.hooksPath (git -c, git config, GIT_CONFIG_*) : c'est par là que git trouve le hook pre-push du kit — jamais modifié par un agent."
-fi
-PUSH_WORD='(^|[^[:alnum:]_.-])push([^[:alnum:]_.-]|$)'
+# 1. Rien ne désactive le hook git pre-push dans la commande même du push. Un réglage durable (git config
+#    core.hooksPath dans un appel séparé, fichier du hook retiré ou non exécutable) est vu par l'étape 2, qui lit
+#    l'état réel du dépôt au moment du push. Lecture sur la commande sans guillemets ni antislash
+#    (« --no-"ve"rify » = --no-verify). Limite assumée : un agent qui réécrit les scripts du kit eux-mêmes
+#    (outil Edit/Write) n'est pas arrêté ici — ces fichiers sont des chemins sensibles de la review.
+PLAIN=$(printf '%s' "$CMD" | tr -d "\"'\\\\")
+PUSH_WORD='(^|[^[:alnum:]_.-])(push|send-pack)([^[:alnum:]_.-]|$)'
 LOOKS_PUSH=0
-if printf '%s' "$CMD" | grep -qE "$PUSH_WORD" && printf '%s' "$CMD" | grep -q 'git'; then LOOKS_PUSH=1; fi
+if printf '%s' "$PLAIN" | grep -qE "$PUSH_WORD" && printf '%s' "$PLAIN" | grep -q 'git'; then LOOKS_PUSH=1; fi
 if [ "$LOOKS_PUSH" = 1 ]; then
-  printf '%s' "$CMD" | grep -qE -- '--no-verify' \
-    && refuse "« push --no-verify » saute le hook pre-push (garde des branches protégées + porte de review) — interdit sans instruction explicite de l'utilisateur, qui le lance lui-même."
-  printf '%s' "$CMD" | grep -qE 'hooks/pre-push|\.git/hooks' \
+  printf '%s' "$PLAIN" | grep -qE 'send-pack' \
+    && refuse "« git send-pack » pousse sans passer par le hook pre-push — utiliser git push."
+  printf '%s' "$PLAIN" | grep -qE -- '--no-v' \
+    && refuse "« push --no-verify » (ou son abréviation) saute le hook pre-push (garde des branches protégées + porte de review) — interdit sans instruction explicite de l'utilisateur, qui le lance lui-même."
+  printf '%s' "$PLAIN" | grep -qiE 'hookspath|GIT_CONFIG_(GLOBAL|SYSTEM|PARAMETERS|COUNT)|--config-env|\.git/config|(^|[^[:alnum:]_])(HUSKY|LEFTHOOK)=|--git-dir|--work-tree|GIT_DIR=|GIT_WORK_TREE=' \
+    && refuse "un push dans la même commande qu'un réglage qui change ou désactive les hooks git (core.hooksPath, GIT_CONFIG_*, .git/config, HUSKY=, LEFTHOOK=, --git-dir, --work-tree) — jamais fait par un agent."
+  printf '%s' "$PLAIN" | grep -qE 'hooks/pre-push|\.git/hooks' \
     && refuse "un push dans la même commande qu'un accès au hook pre-push — séparer, et ne jamais retirer ce hook."
 fi
 
@@ -190,7 +197,10 @@ TAB=$(printf '\t')
 if [ "$LOOKS_PUSH" = 1 ]; then
   DIRS="$CWD"
   while IFS="$TAB" read -r kind dir _rest; do
-    case "$kind" in push|opaque) [ -d "$dir" ] && DIRS="$DIRS$TAB$dir" ;; esac
+    case "$kind" in
+      push|opaque) [ -d "$dir" ] || refuse "dépôt visé « $dir » non résoluble (variable, ~, chemin avec espace) : impossible de vérifier que son hook pre-push est branché — écrire le chemin absolu sans espace, ou lancer le push depuis ce dossier."
+                   DIRS="$DIRS$TAB$dir" ;;
+    esac
   done <<EOF_ACTIONS
 $ACTIONS
 EOF_ACTIONS

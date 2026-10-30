@@ -94,10 +94,12 @@ prepush_target() {
   printf '%s\n' "$common/hooks/pre-push"
 }
 
-# prepush_installed <racine> → 0 si le hook pre-push du kit est branché sur ce dépôt.
+# prepush_installed <racine> → 0 si le hook pre-push du kit est branché sur ce dépôt ET que git l'exécutera
+# (bit exécutable ; sauf le pre-push de husky, que son lanceur .husky/_/ appelle par sh).
 prepush_installed() {
   local f; f=$(prepush_target "$1") || return 1
-  [ -f "$f" ] && grep -q "$PREPUSH_MARK" "$f" 2>/dev/null
+  [ -f "$f" ] && grep -q "$PREPUSH_MARK" "$f" 2>/dev/null || return 1
+  [ -x "$f" ] || [ -d "$(dirname "$f")/_" ]
 }
 
 # parse_push_cmd <commande> <dossier courant> → une ligne par action trouvée, dans l'ordre de la commande :

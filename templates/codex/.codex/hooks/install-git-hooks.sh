@@ -39,16 +39,21 @@ if [ -f "$TARGET" ] && grep -q "$PREPUSH_MARK" "$TARGET" && ! grep -q '^# claude
 fi
 
 mkdir -p "$(dirname "$TARGET")"
-cat > "$TARGET" <<'EOF_HOOK'
-#!/bin/sh
-# claude-kit-wrapper — posé par .codex/hooks/install-git-hooks.sh (claude-kit:pre-push), ne pas éditer.
-# Appelle le hook pre-push du kit du worktree courant ; s'il manque, le push est refusé.
+KIT_HOOKS="$(cd "$(dirname "$0")" && pwd -P)"
+{
+  echo '#!/bin/sh'
+  echo '# claude-kit-wrapper — posé par .codex/hooks/install-git-hooks.sh (claude-kit:pre-push), ne pas éditer.'
+  echo "# Appelle le hook pre-push du kit du worktree courant ; à défaut (worktree d'une branche antérieure au kit,"
+  echo "# kit installé dans un sous-dossier), celui de l'installation. S'il manque partout, le push est refusé."
+  printf 'KIT_HOOKS=%s\n' "$(printf '%q' "$KIT_HOOKS")"
+  cat <<'EOF_HOOK'
 ROOT=$(git rev-parse --show-toplevel) || exit 1
-for h in "$ROOT/.codex/hooks/pre-push" "$ROOT/.codex/hooks/pre-push"; do
+for h in "$ROOT/.codex/hooks/pre-push" "$ROOT/.codex/hooks/pre-push" "$KIT_HOOKS/pre-push"; do
   [ -f "$h" ] && exec bash "$h" "$@"
 done
 echo "🛑 pre-push : .codex/hooks/pre-push introuvable dans $ROOT — push refusé (réinstaller les hooks du kit, ou retirer $0)." >&2
 exit 1
 EOF_HOOK
+} > "$TARGET"
 chmod +x "$TARGET"
 echo "hook pre-push du kit branché : $TARGET"
