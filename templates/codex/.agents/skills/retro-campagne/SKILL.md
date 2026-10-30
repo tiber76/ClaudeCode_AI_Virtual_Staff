@@ -3,7 +3,7 @@ name: retro-campagne
 description: |
   Post-mortem d'une campagne / landing / séquence growth : 3 points "a marché",
   3 points "a coincé", écarts vs objectifs du brief, 1-3 next bets pour itérer.
-  Produit un rapport court actionnable dans docs/growth$retros/RETRO-<slug>.md.
+  Produit un rapport court actionnable dans docs/growth/retros/RETRO-<slug>.md.
   Propose un ajout aux playbooks agents si leçon transverse détectée. Invoquer
   après une campagne livrée + fenêtre d'évaluation écoulée (14-30-90j selon nature).
 ---
@@ -91,7 +91,7 @@ Demande confirmation avant d'écrire dans l'agent.
 
 ### 6. Sauvegarde
 
-Rapport court dans `docs/growth$retros/RETRO-<slug>-<YYYY-MM-DD>.md`.
+Rapport court dans `docs/growth/retros/RETRO-<slug>-<YYYY-MM-DD>.md`.
 
 ## Template retro complet
 
@@ -221,7 +221,7 @@ Rapport court dans `docs/growth$retros/RETRO-<slug>-<YYYY-MM-DD>.md`.
 - `.agents/skills/call-growth-lead/SKILL.md` — priorisation next bets
 - `.codex/agents/marketing-analytics.toml` — mesure écarts
 - `.agents/skills/retro/SKILL.md` — retro côté dev (même esprit)
-- `docs/growth$retros/` — retros existantes
+- `docs/growth/retros/` — retros existantes
 
 ## 💰 Coût indicatif
 

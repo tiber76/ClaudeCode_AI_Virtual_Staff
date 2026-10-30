@@ -37,11 +37,11 @@ node scripts/validate-templates.mjs
 
 Le validateur controle :
 
-- 13 agents Claude hors template.
-- 16 skills Claude.
-- 16 commandes Claude.
-- 13 agents Codex.
-- 16 skills Codex.
+- 18 agents Claude hors template.
+- 23 skills Claude.
+- 23 commandes Claude.
+- 18 agents Codex.
+- 23 skills Codex.
 - frontmatter `name` / `description`.
 - absence de reliquats `.claude`, `AskUserQuestion`, `allowed-tools`, `triggers` dans l'arbre Codex genere.
 

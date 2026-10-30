@@ -27,5 +27,19 @@
   },
   "env": {
     "DEBUG": "false"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 15,
+            "command": "if [ -x \"$CLAUDE_PROJECT_DIR/.claude/hooks/review-gate.sh\" ]; then exec \"$CLAUDE_PROJECT_DIR/.claude/hooks/review-gate.sh\"; fi; if grep -qE '(git|gh)[^\"]*(push|pr create)'; then echo \"🛑 hook review-gate.sh absent ou non exécutable (chmod +x .claude/hooks/*.sh .claude/hooks/pre-push) : push refusé\" >&2; exit 2; fi"
+          }
+        ]
+      }
+    ]
   }
 }

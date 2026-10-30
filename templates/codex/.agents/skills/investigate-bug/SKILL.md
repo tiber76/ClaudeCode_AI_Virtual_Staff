@@ -26,6 +26,7 @@ Trouver la **cause racine** d'un bug avant de le patcher, pour éviter le "j'ai 
 3. **Pas de "fix and pray".** Si on n'explique pas pourquoi le fix marche, on n'a pas trouvé la cause.
 4. **Test avant fix.** Le test qui reproduit le bug doit être écrit AVANT le fix — c'est lui qui prouve qu'on a bien corrigé.
 5. **Ne pas modifier le code dans ce skill.** Proposer, pas exécuter.
+6. **Règle des 3 tentatives.** 3 fixes tentés sans succès = STOP : le problème est probablement architectural, pas local. Formuler l'hypothèse architecturale + `question utilisateur` avec options concrètes — jamais un 4e patch au jugé.
 
 ## Étapes
 
@@ -42,6 +43,9 @@ Demander à l'utilisateur (ou déduire du contexte) :
 - Identifier le(s) fichier(s) probable(s) via grep du message d'erreur, ou via la trace de la stack.
 - Lire le code concerné sans préjugés.
 - Identifier les zones adjacentes (fonctions appelées, handlers amont/aval).
+
+### 2 bis. Comparer avec l'analogue qui marche
+Avant de formuler les hypothèses : identifier la route / le composant ANALOGUE qui fonctionne (dans une base de code au pattern homogène, il existe presque toujours un jumeau sain), puis lister les différences concrètes entre les deux (`rg` ciblé ou diff mental des deux handlers). Chaque différence = une hypothèse candidate déjà à moitié vérifiée.
 
 ### 3. Hypothèses (min 3)
 Lister 3 à 5 causes possibles, classées par probabilité :
@@ -161,7 +165,7 @@ describe(...)  {
 \`\`\`
 
 ## Prochaines étapes
-1. Valider le diagnostic.
+1. Valider le diagnostic : cause en une phrase, exemple vécu et options A / B affichés dans le chat, rapport en lien, avant la question de validation.
 2. Écrire le test (rouge).
 3. Appliquer le fix choisi.
 4. Test vert.

@@ -123,6 +123,29 @@ Exemples d'optims classiques à vérifier :
 
 Piège connu : un round 1 data-engineer qui chiffre le surcoût sans auditer l'existant. Relance post-livraison révèle systématiquement 3+ optims tokens valables (-8 à -12% input) → rework évitable.
 
+## Discipline TDD pour le code IA que tu écris
+
+**Tout code IA applicatif s'écrit en TDD strict** (pas le prompt lui-même, qui est du contenu, mais : parser, validator, helpers déterministes, route handler IA, scrub des données personnelles, escape XML, garde-fou de budget). C'est ta responsabilité, pas celle du QA.
+
+### Workflow par task IA
+
+1. **Lis le brief QA Round 1** : les sections IA (cas IA-n) et injection de prompt (cas INJ-n) sont tes cas obligatoires, plus les sections API selon la route.
+2. **Écris les tests rouges** (`{{DIR_TESTS_UNIT}}`) pour le parser, le validator, le scrub ou le handler. Simule le LLM par un faux client qui renvoie des formes malformées.
+3. **Lance le test** : il doit échouer, **pour la bonne raison** (lire le message d'échec : la fonctionnalité manque, ce n'est pas un import cassé ni une faute de frappe). Un test vert d'emblée ne teste rien : le retravailler.
+4. **Écris le minimum de code IA** pour passer au vert.
+5. **Refactor** en gardant le vert.
+6. **`/verify`** avant commit (inclut : sortie structurée via le wrapper central, validator de forme strict, log de monitoring si `tokens > 0 && insights.length === 0`, scrub avant persistance, escape XML à 5 caractères, garde-fou de budget actif).
+7. **Commit** : `feat(ai): <slug> — TDD <NB tests>`, avec dans le corps les pièges IA mitigés et les cas du brief QA couverts.
+
+### Périmètre TDD IA
+
+- ✅ **Obligatoire** : parser de réponse, validator (forme stricte + lexique synchronisé), scrub, escape XML, garde-fou de budget, helpers déterministes, route handler IA.
+- ❌ **Exception** : le contenu textuel du prompt (instructions, exemples), validé par des fixtures de test du parser, pas par un test « le prompt contient cette phrase ».
+
+### Pair working QA
+
+Le brief Round 1 est l'oracle ; échanges courts autorisés en cas d'ambiguïté, 2 au maximum par feature. Le QA relit ta couverture au lot final de la PR (sections IA et injection prioritaires) et écrit les E2E si la feature IA touche un parcours utilisateur.
+
 ## Ta mission dans l'orchestrateur
 
 Quand le tech-lead te convoque (signal IA détecté : `llm`, `prompt`, `ai_insights`, `report`, `assistant`, `chained-context`, `scrub-pii`, `structured-output`), tu produis :
@@ -188,6 +211,7 @@ Quand le tech-lead te convoque (signal IA détecté : `llm`, `prompt`, `ai_insig
 - `escapeXml()` à 3 caractères dans un contexte de prompt chaîné (attribute-injection latente).
 - Validator anti-hallucination désynchronisé avec le lexique des `[FAITS MESURÉS]` (self-lock).
 - Audit IA qui ne couvre que le nouveau scope, sans regarder l'efficience du legacy.
+- Round 1 sans **inventaire exhaustif des surfaces IA** quand la feature retire ou filtre un traitement IA pour une partie des données : feature livrée partielle (une partie seulement des consommateurs couverts, le reste découvert après merge). Avant tout plan, chercher par `rg -l "<wrapper LLM>|<chargeur de données>|<générateurs de rapport>" {{DIR_ROUTES_API}} {{DIR_HELPERS}}` et statuer pour chaque surface : dans le périmètre / hors périmètre (suite explicite) / non applicable. Aucune surface laissée implicite.
 
 ## Référence
 

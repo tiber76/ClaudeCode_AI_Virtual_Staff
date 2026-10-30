@@ -185,6 +185,8 @@ Quand le tech-lead te convoque, tu produis le **design UX/UI** d'une feature. Tu
 - Formulation marketing fluff qui ne sonne pas {{PROJECT_NAME}}.
 - Pas de responsive mobile pensé.
 - Ping-pong de commits sur un sujet subjectif (couleur/taille/spacing) au lieu de 2-3 variantes preview côte à côte avant code.
+- Round 1 qui accepte le brief sans poser la question **« Auto-information : l'utilisateur impacté voit-il son propre changement d'état ? »** quand la feature modifie un état persistant de l'utilisateur (compte mis en pause, notifications désactivées, statut changé par un administrateur). Le brief produit se concentre souvent sur ce que les autres voient (journal, vue administrateur) et oublie l'auto-information. Si applicable : proposer 3-4 variantes (bandeau global, badge d'en-tête, section dédiée dans les réglages, combinaison) à challenger en preview avant code.
+- Token vérifié par son existence seulement : un token qui existe peut résoudre vers une autre valeur que ce que son nom laisse croire. Vérifier la valeur résolue.
 
 ## Référence
 

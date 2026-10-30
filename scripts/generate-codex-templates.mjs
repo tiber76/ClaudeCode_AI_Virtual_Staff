@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -27,15 +27,26 @@ const CODEX_AGENT_MODEL_MAP = {
   "copywriter-brand": { model: "gpt-5.4-mini", effort: "medium" },
   "content-seo": { model: "gpt-5.4-mini", effort: "medium" },
   "marketing-analytics": { model: "gpt-5.4-mini", effort: "medium" },
+  "full-stack-worker": { model: "gpt-5.3-codex", effort: "high" },
+  "review-finder": { model: "gpt-5.3-codex", effort: "medium" },
+  "review-verifier": { model: "gpt-5.3-codex", effort: "medium" },
+  "pre-mortem-adversaire": { model: "gpt-5.3-codex", effort: "medium" },
+  integrateur: { model: "gpt-5.4-mini", effort: "medium" },
 };
 
 const SKILLS = [
   "audit-funnel",
+  "audit-memory",
   "brief-demo",
   "call-growth-lead",
   "call-tech-lead",
+  "close-session",
+  "dev-express",
+  "fix-bug",
   "fullstack-lead-tech",
+  "integre-design",
   "investigate-bug",
+  "pre-mortem",
   "qa-flow",
   "redige-brief",
   "redige-us",
@@ -46,7 +57,11 @@ const SKILLS = [
   "setup-project",
   "ship-landing",
   "ship-pr",
+  "verify",
 ];
+
+// Fichiers d'appui partages entre skills (pas de SKILL.md).
+const SHARED_SKILL_DIRS = ["_partage"];
 
 const AGENTS = [
   "ai-llm-engineer",
@@ -57,10 +72,15 @@ const AGENTS = [
   "data-engineer",
   "designer-uxui",
   "full-stack-lead",
+  "full-stack-worker",
   "growth-lead",
+  "integrateur",
   "marketing-analytics",
   "po-metier",
+  "pre-mortem-adversaire",
   "qa",
+  "review-finder",
+  "review-verifier",
   "sales-b2b",
 ];
 
@@ -138,7 +158,9 @@ function codexize(text) {
     .replaceAll("`cso` (gpt-5.5, si convoqué)", "`cso` (gpt-5.3-codex, si convoqué)");
 
   for (const skill of SKILLS) {
-    output = output.replaceAll(`/${skill}`, `$${skill}`);
+    // Commande slash seulement : pas un segment de chemin (.claude/skills/verify/)
+    // ni un prefixe d'un autre nom (/review-pr dans /review-proof.sh).
+    output = output.replace(new RegExp(`(?<![\\w./-])/${skill}(?![\\w-])`, "g"), `$${skill}`);
   }
 
   for (const agent of AGENTS) {
@@ -197,6 +219,48 @@ async function writeCodexSkill(name) {
   const content = `${codexSkillFrontmatter(name, description)}${prelude}${codexize(body)}`;
   await mkdir(dirname(targetPath), { recursive: true });
   await writeFile(targetPath, content, "utf8");
+  await writeCodexSupportFiles(join(CLAUDE_DIR, "skills", name), dirname(targetPath), ["SKILL.md"]);
+}
+
+// Fichiers d'appui d'un skill (phases.md, angles.md...) : meme traduction que le SKILL.md.
+async function writeCodexSupportFiles(sourceDir, targetDir, skip = []) {
+  const entries = await readdir(sourceDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith(".md") || skip.includes(entry.name)) continue;
+    const source = await readFile(join(sourceDir, entry.name), "utf8");
+    await mkdir(targetDir, { recursive: true });
+    await writeFile(join(targetDir, entry.name), codexize(source), "utf8");
+  }
+}
+
+// Les hooks Claude Code n'ont pas d'equivalent automatique cote Codex : les scripts
+// sont copies sous .codex/hooks/ pour etre appeles a la main par les skills.
+async function writeCodexHooks() {
+  const sourceDir = join(CLAUDE_DIR, "hooks");
+  let entries;
+  try {
+    entries = await readdir(sourceDir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+  const targetDir = join(CODEX_DIR, ".codex", "hooks");
+  await mkdir(targetDir, { recursive: true });
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    const sourcePath = join(sourceDir, entry.name);
+    const targetPath = join(targetDir, entry.name);
+    const source = await readFile(sourcePath, "utf8");
+    // Côté Codex, les procédures (skills) vivent sous .agents/skills/ et la config sous .codex/config.toml :
+    // les regex de chemins sensibles des hooks suivent, avant la substitution générale .claude/ → .codex/.
+    await writeFile(targetPath, source
+      .replaceAll(".claude/skills/", ".agents/skills/")
+      .replaceAll("\\.claude/(agents/|skills/review-pr/)", "\\.(codex/agents/|agents/skills/review-pr/)")
+      .replaceAll("\\.claude/(settings[^/]*\\.json$|agents/|hooks/|skills/review-pr/)", "\\.(codex/(config\\.toml$|agents/|hooks/)|agents/skills/review-pr/)")
+      .replaceAll(".claude/", ".codex/")
+      .replaceAll("\\.claude/", "\\.codex/")
+      .replaceAll("CLAUDE_PROJECT_DIR", "CODEX_PROJECT_DIR"), "utf8");
+    await chmod(targetPath, (await stat(sourcePath)).mode);
+  }
 }
 
 async function writeCodexAgent(name) {
@@ -223,7 +287,7 @@ async function writeCodexAgent(name) {
   await writeFile(targetPath, content, "utf8");
 }
 
-async function writeStaticFiles() {
+async function writeStaticFiles(existingAgentsMd) {
   const agentsMd = [
     "# AGENTS.md — Equipe virtuelle Codex {{PROJECT_NAME}}",
     "",
@@ -268,8 +332,9 @@ async function writeStaticFiles() {
     "```",
     "codex/",
     "├── AGENTS.md                 # regles projet lues par Codex",
-    "├── .agents/skills/           # 16 skills Codex, un dossier par workflow",
-    "└── .codex/agents/            # 13 agents specialises Codex en TOML",
+    `├── .agents/skills/           # ${SKILLS.length} skills Codex, un dossier par workflow (+ _partage/)`,
+    `├── .codex/agents/            # ${AGENTS.length} agents specialises Codex en TOML`,
+    "└── .codex/hooks/             # scripts de controle (review, E2E, preuve de fix) appeles par les skills",
     "```",
     "",
     "## Installation dans un projet cible",
@@ -313,16 +378,24 @@ async function writeStaticFiles() {
     "",
   ].join("\n");
 
-  await writeFile(join(CODEX_DIR, "AGENTS.md"), agentsMd, "utf8");
+  // AGENTS.md est maintenu a la main depuis la v0.4.0 (marqueur de version,
+  // sections token efficiency) : on ne le regenere que s'il manque.
+  if (!existingAgentsMd) await writeFile(join(CODEX_DIR, "AGENTS.md"), agentsMd, "utf8");
+  else await writeFile(join(CODEX_DIR, "AGENTS.md"), existingAgentsMd, "utf8");
   await writeFile(join(CODEX_DIR, "README.md"), readme, "utf8");
 }
 
 async function main() {
+  const existingAgentsMd = await readFile(join(CODEX_DIR, "AGENTS.md"), "utf8").catch(() => null);
   await rm(CODEX_DIR, { recursive: true, force: true });
   await mkdir(CODEX_DIR, { recursive: true });
   for (const name of SKILLS) await writeCodexSkill(name);
+  for (const dir of SHARED_SKILL_DIRS) {
+    await writeCodexSupportFiles(join(CLAUDE_DIR, "skills", dir), join(CODEX_DIR, ".agents", "skills", dir));
+  }
   for (const name of AGENTS) await writeCodexAgent(name);
-  await writeStaticFiles();
+  await writeCodexHooks();
+  await writeStaticFiles(existingAgentsMd);
 }
 
 main().catch((error) => {

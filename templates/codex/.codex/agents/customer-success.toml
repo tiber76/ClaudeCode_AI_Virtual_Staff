@@ -196,6 +196,6 @@ Quand le `growth-lead` ou `call-tech-lead` te convoque :
 - `.codex/agents/po-metier.toml` — roadmap & feedback terrain
 - `docs/GUIDE-LLM.md` — ton éditorial, rituels produit, proof points
 - `{{ENTITIES_LIST}}` — entités produit principales
-- `docs/growth$retros/` — études de cas
+- `docs/growth/retros/` — études de cas
 
 '''

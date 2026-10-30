@@ -1,4 +1,4 @@
-<!-- virtual-staff-kit:CLAUDE.md v0.4.0 -->
+<!-- virtual-staff-kit:CLAUDE.md v0.5.0 -->
 # {{PROJECT_NAME}} — Préambule Claude Code
 
 Fichier auto-chargé par Claude Code à chaque session quand il est à la racine du projet.
@@ -15,13 +15,51 @@ Ce fichier contient les **règles transverses** (output, compaction, délégatio
 
 ## Skills clés à préférer au codage direct
 
-- `/call-tech-lead <besoin> --depth=lean|standard|full` — orchestre l'équipe tech multi-agents (PO, full-stack-lead, designer, QA, CSO, data, IA).
+- `/call-tech-lead <besoin> --depth=lean|standard|full` — orchestre l'équipe tech multi-agents (PO, full-stack-lead, designer, QA, CSO, data, IA). **Voie des features.**
+- `/dev-express` — voie courte pour un sujet de taille S (petit bug, dette, tâche, outil interne) : mêmes garde-fous, sans la cérémonie d'une feature.
+- `/fix-bug` — profil bug de `/dev-express` : cause racine, test rouge, preuve inversée.
 - `/call-growth-lead <besoin> --depth=lean|standard|full` — orchestre l'équipe growth (sales, CS, copy, SEO, analytics).
 - `/investigate-bug <symptôme>` — méthodologie root-cause avant patch.
-- `/review-pr` — checklist sécu / clean code / tests sur le diff.
-- `/qa-flow` — pyramide de tests (unit → intégration → E2E smoke → critical → full).
-- `/ship-pr` — chaîne pré-PR complète (tests → review → commit → PR).
-- `/retro` — capitalisation post-feature ou post-bug.
+- `/review-pr` — relecture structurée du diff, au palier calculé depuis le diff.
+- `/qa-flow` — pyramide de tests (unit → intégration → E2E).
+- `/verify` — checklist obligatoire avant chaque commit applicatif.
+- `/ship-pr` — chaîne pré-PR complète (tests → commit → relecture → PR).
+- `/retro` — capitalisation post-feature ou post-bug ; `/audit-memory` — hygiène périodique de la mémoire.
+
+**Quelle voie** : une feature → `/call-tech-lead` ; un sujet de taille S → `/dev-express` ; un bug de taille S → `/fix-bug`. Au moindre signal lourd (migration, sécurité, plusieurs zones), `/dev-express` renvoie vers `/call-tech-lead`.
+
+## Porte de relecture avant PR
+
+- Aucun `git push` ni `gh pr create` sans rapport de relecture `.claude/reviews/<sha de HEAD>.md` au palier calculé depuis le diff (hook `review-gate`). Après chaque nouveau commit, relecture à refaire.
+- `/ship-pr` enchaîne la relecture ; `/review-pr` reste invocable seul pour auto-challenger un diff.
+- **Bypass** (ligne `SKIP-review-pr: <raison>` dans le corps du commit) : uniquement sur instruction explicite de l'utilisateur. Aucun bypass silencieux.
+
+## Discipline de développement
+
+- **TDD** pour tout code applicatif non trivial : test rouge, code minimal, refactor, `/verify`, commit.
+- **Sanction TDD** : du code applicatif écrit sans test rouge préalable est supprimé et réécrit en TDD. Jamais « je garde et j'ajoute les tests après », sauf permission explicite de l'utilisateur.
+- **Qualité du rouge** : lire le message d'échec et vérifier qu'il vient bien de la fonctionnalité manquante (pas d'une faute de frappe ni d'un import cassé). Un test vert d'emblée est suspect : il ne teste rien, le retravailler avant de coder.
+- **Exceptions TDD** : migrations idempotentes, config pure, docs, renommage ou déplacement pur.
+- **Test cassé ou ignoré découvert en chemin** : le corriger tout de suite. S'il bloque vraiment plus de 30 minutes, demander un arbitrage avec des options concrètes ; jamais de `skip` ni d'entrée de backlog silencieuse.
+- **Recevoir une relecture** : vérifier chaque remarque contre le code réel avant de répondre, jamais d'acquiescement réflexe. Remarque floue = poser une question, pas implémenter une interprétation partielle. Désaccord = argument technique posé, pas de complaisance.
+- **Test manuel local** : dès qu'un bug, une US ou tout autre sujet touche du code servi par l'application, l'agent joue lui-même le parcours sur le serveur local (`{{CMD_DEV}}`), dans un vrai navigateur, et rend le statut (✓ / ✗ / non joué + raison / sans objet) en fin de session, en plus des tests automatiques. Règle : `.claude/skills/_partage/test-manuel-local.md`.
+- **Avant la PR** : trace `/verify : N/8 ✓` dans le corps du commit, reprise par `/ship-pr`.
+
+## Restitution à l'utilisateur
+
+Du concret en français, qui tient sans lire une ligne de code : texte vu à l'écran, exemple chiffré, analogie du quotidien. Zéro jargon interne (traduit à la première occurrence s'il est indispensable).
+
+À la fin d'un dev, dans cet ordre : **ce que ça change** (exemple vécu) · **l'écart au cadrage** · **ce que l'utilisateur doit valider** · **ce que l'utilisateur doit faire** · **ce qui n'est pas fait** ; puis les preuves en une ligne.
+
+Une question de validation (plan, US, diagnostic, PR prête) ne part qu'après son contenu affiché dans le chat ; le fichier n'est qu'un lien en plus.
+
+## Fil de progression
+
+Toute commande, et le chat normal dès 3 étapes : plan de route annoncé au départ, une ligne `▶/✓ Étape N/M · Nom` par étape, silence entre deux sauf changement pour l'utilisateur, jamais d'identifiant interne nu. Toute action attendue de l'utilisateur passe par un bloc `🟥/🟧 À TOI` (Quoi / Pourquoi / Comment / Durée / Ensuite) ; fin `✅ Terminé N/N`. Format, mise en page et plans de route : `.claude/skills/_partage/fil-de-progression.md` (source unique, à lire au lancement d'une commande).
+
+## Une PR = un contexte frais
+
+En direct : session neuve après chaque PR. Sous `/call-tech-lead` multi-tranches : la session principale orchestre, chaque tranche est portée par un worker frais, l'orchestrateur joue la relecture et la PR, la tranche n+1 démarre après le merge de la tranche n, jamais d'empilement. Le contexte relu à chaque message domine la facture.
 
 ## Token efficiency — règles transverses
 
@@ -67,7 +105,7 @@ Quand la compaction se déclenche, **préserver impérativement** les éléments
 3. **Décisions prises pendant la session non encore commitées** (choix produit, copy validée, arbitrage technique).
 4. **Liste des fichiers édités** (path absolu) + résumé 1 ligne par fichier de l'intention.
 5. **Numéros de PR / issues** mentionnés — pour le cleanup post-merge.
-6. **Verdicts d'agents `/call-tech-lead`** s'ils ne sont pas écrits dans `.claude/call-tech-lead-runs/`.
+6. **Verdicts d'agents `/call-tech-lead`** s'ils ne sont pas écrits dans `.claude/call-call-tech-lead-runs/`.
 
 ### 🟡 Bon à garder (utile mais reconstructible)
 

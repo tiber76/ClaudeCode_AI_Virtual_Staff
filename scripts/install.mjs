@@ -14,6 +14,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { constants } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -157,15 +158,28 @@ async function installCodex(targetRoot, policy, actions) {
   await copyFileSafe(join(TEMPLATES, "codex", "AGENTS.md"), join(targetRoot, "AGENTS.md"), policy, actions);
 }
 
+// Branche le hook git pre-push du kit (garde des branches protegees + porte de review) sur le depot cible.
+// Sans depot git ou avec un hook pre-push existant, le script explique la ligne a ajouter : rien n'est ecrase.
+function installGitHooks(targetRoot, provider, actions) {
+  const dir = provider === "codex" ? ".codex" : ".claude";
+  const script = join(targetRoot, dir, "hooks", "install-git-hooks.sh");
+  const result = spawnSync("bash", [script], { cwd: targetRoot, encoding: "utf8" });
+  const out = `${result.stdout || ""}${result.stderr || ""}`.trim();
+  if (result.status === 0) actions.push(`hook git pre-push : ${out}`);
+  else actions.push(`hook git pre-push NON branche — lancer \`bash ${dir}/hooks/install-git-hooks.sh\` depuis le depot : ${out.replace(/\n+/g, " ")}`);
+}
+
 function gitignoreEntries(provider) {
   const entries = [];
   if (provider === "claude" || provider === "both") {
     entries.push(".claude/call-call-tech-lead-runs/");
     entries.push(".claude/call-call-growth-lead-runs/");
     entries.push(".claude/settings.local.json");
+    entries.push(".claude/reviews/");
   }
   if (provider === "codex" || provider === "both") {
     entries.push(".codex/runs/");
+    entries.push(".codex/reviews/");
   }
   return entries;
 }
@@ -297,6 +311,7 @@ async function main() {
     if (provider === "codex" || provider === "both") await installCodex(targetRoot, policy, actions);
     if (withRootClaudeMd) await installRootClaudeMd(targetRoot, policy, actions);
     await updateGitignore(targetRoot, provider, actions);
+    installGitHooks(targetRoot, provider, actions);
     await writeAiSetupPrompt(targetRoot, provider, actions);
 
     const report = [

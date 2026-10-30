@@ -1,0 +1,30 @@
+# Chemins sensibles pour .claude/hooks/e2e-level.sh : un glob par ligne.
+# Si le diff touche l'un d'eux, le niveau E2E avant PR monte à « smoke ».
+# `*` couvre aussi les « / » (ex. `src/auth/*` = tout l'arbre sous src/auth/).
+# Lignes vides et lignes commençant par # ignorées. Adaptez à votre projet,
+# gardez la liste courte : chaque entrée coûte un run E2E avant PR.
+#
+# --- Exemples (décommentez / remplacez) ---
+# Connexion et session
+# src/auth/*
+# app/api/auth/*
+# Paiement
+# app/api/billing/*
+# src/payments/*
+# Rôles et droits
+# src/permissions/*
+# Middleware / proxy
+# middleware.*
+# src/middleware.*
+# Migrations de base de données
+# migrations/*
+# db/migrate/*
+# Politique de sécurité (CSP, en-têtes)
+# next.config.*
+# Verrou des dépendances
+# package-lock.json
+# pnpm-lock.yaml
+# yarn.lock
+# Outils communs des E2E (helpers, config du runner)
+# e2e/helpers/*
+# playwright.config.*

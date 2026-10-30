@@ -3,7 +3,7 @@ name: setup-project
 description: |
   Questionnaire interactif qui remplit tous les placeholders du starter kit en une
   seule fois. Lance ce skill après avoir copié le kit dans un nouveau projet pour
-  adapter les 13 agents, 16 skills et la doc au contexte spécifique : stack,
+  adapter les 18 agents, 23 skills, les hooks et la doc au contexte spécifique : stack,
   rôles utilisateurs, entités métier, ton éditorial, sécurité, pricing.
   Produit un rapport de configuration et un backlog des TODOs résiduels.
 ---
@@ -21,9 +21,10 @@ Configurer le starter kit d'équipes virtuelles Codex en une seule session, via 
 
 ## Prérequis
 Le kit doit être copié à la racine du projet :
-- `.codex/agents/*.toml` (13 agents avec placeholders)
-- `.agents/skills/*/SKILL.md` (16 skills avec placeholders)
-- `.agents/skills/*/SKILL.md` (16 alias)
+- `.codex/agents/*.toml` (18 agents avec placeholders)
+- `.agents/skills/*/SKILL.md` (23 skills avec placeholders, + fichiers d'appui et `_partage/`)
+- `.agents/skills/*/SKILL.md` (23 alias)
+- `.codex/hooks/*.sh` + `config.sh` (porte de review, niveau E2E, preuve de fix)
 - `docs/GUIDE-LLM.md` (squelette 12 sections)
 - `docs/EQUIPES-LLM.md` (doc équipe)
 - `docs/COUTS-LLM.md` (estimations tokens)
@@ -196,7 +197,7 @@ Pose les questions en **6 vagues thématiques**, pas toutes d'un coup (fatigue c
 
 27. **Branche de dev par défaut** : develop (défaut) / main / master / autre
 28. **Taille équipe** : solo / 2-5 / 5-15 / 15+
-29. **Agents à activer** : liste des 13 agents avec case à cocher (pré-cochés selon les réponses précédentes)
+29. **Agents à activer** : liste des 18 agents avec case à cocher (pré-cochés selon les réponses précédentes)
 
 ### Étape 2 — Synthèse & validation
 
@@ -220,7 +221,7 @@ DOMAINE
 ├── Entités : <liste>
 └── Statuts : <liste ou N/A>
 
-AGENTS ACTIVÉS (X/13)
+AGENTS ACTIVÉS (X/18)
 ├── ✅ po-metier
 ├── ✅ full-stack-lead
 ├── ❌ ai-llm-engineer (désactivé : pas de LLM dans le produit)
@@ -233,7 +234,7 @@ Si "modifier" → proposer de modifier une section spécifique, relancer juste c
 
 ### Étape 3 — Application des remplacements
 
-Pour chaque fichier avec placeholders (`.codex/agents/*.toml`, `.agents/skills/*/SKILL.md`, `docs/*.md`) :
+Pour chaque fichier avec placeholders (`.codex/agents/*.toml`, `.agents/skills/**/*.md`, `.agents/skills/*/SKILL.md`, `.codex/hooks/config.sh`, `CLAUDE.md`, `docs/*.md`) :
 
 1. Lire le fichier.
 2. Remplacer tous les `{{VARIABLE}}` connus par leur valeur.
@@ -254,6 +255,18 @@ Et supprimer les références à cet agent dans :
 - `.agents/skills/call-tech-lead/SKILL.md` (matrice de routing)
 - `.agents/skills/call-growth-lead/SKILL.md` (matrice de routing)
 - `docs/EQUIPES-LLM.md`
+
+Les agents de mécanique (`full-stack-worker`, `review-finder`, `review-verifier`, `pre-mortem-adversaire`) ne se désactivent pas : ils portent `$call-tech-lead`, `$review-pr` et `$pre-mortem`. `integrateur` suit `designer-uxui`.
+
+### Étape 4 bis — Hooks
+
+0. Prérequis : `jq` installé (le hook `review-gate` en a besoin et ferme la porte sans lui).
+1. `chmod +x .codex/hooks/*.sh .codex/hooks/pre-push` (au cas où la copie a perdu le bit exécutable).
+1 bis. Brancher le hook git : `bash .codex/hooks/install-git-hooks.sh` (puis `--status` doit dire « branché »). C'est lui qui refuse un push vers une branche protégée ou d'un commit sans rapport de review. S'il existe déjà un hook `pre-push` ou un `core.hooksPath` (husky…), le script affiche la ligne à ajouter : la proposer à l'utilisateur, ne jamais écraser son hook.
+2. Vérifier `.codex/hooks/config.sh` : `REVIEW_BASE_BRANCH` et `PROTECTED_BRANCHES` remplis, et renseigner `FIX_BRANCH_RE` et `E2E_DIR`.
+3. Adapter `.codex/hooks/e2e-sensitive.txt` (chemins qui déclenchent le smoke E2E) et, si besoin, `REVIEW_SENSITIVE_RE` dans `config.sh` (chemins qui déclenchent le palier de review `complet`) aux dossiers réels du projet.
+4. Lancer les auto-tests : `for t in .codex/hooks/*.test.sh; do bash "$t"; done`.
+5. Le hook Codex est câblé dans `.codex/config.toml` (issu de `settings.template.json`). Pour que toute l'équipe les ait, proposer de déplacer le bloc `hooks` dans `.codex/settings.json` versionné.
 
 ### Étape 5 — Vérification finale
 
@@ -281,7 +294,7 @@ Si placeholder résiduel → ajouter entrée dans `backlog.md` P1 : "Remplacer `
 - Rôles : <liste>
 - Entités : <liste>
 
-## Agents activés (X/13)
+## Agents activés (X/18)
 
 | Agent | Activé | Justification |
 |---|---|---|
@@ -291,8 +304,8 @@ Si placeholder résiduel → ajouter entrée dans `backlog.md` P1 : "Remplacer `
 
 ## Fichiers modifiés
 
-- 13 → X agents (N supprimés)
-- 16 → Y skills
+- 18 → X agents (N supprimés)
+- 23 → Y skills
 - 6 docs mises à jour
 
 ## Placeholders résiduels (à traiter manuellement)

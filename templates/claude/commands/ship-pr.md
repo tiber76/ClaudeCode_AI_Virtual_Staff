@@ -1,5 +1,5 @@
 ---
-description: Chaîne complète pré-PR (tests → build → commit → gh pr create --base develop)
+description: Chaîne pré-PR (tests, /verify, commit, E2E au niveau calculé + /review-pr en parallèle, build, push, PR vers {{GIT_DEFAULT_BRANCH}})
 argument-hint: [message PR optionnel]
 ---
 

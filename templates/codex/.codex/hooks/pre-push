@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# pre-push — hook git du kit : contrôle exact de ce qui part, quelle que soit la façon d'écrire le push.
+#
+# Git l'appelle avant chaque push (via le petit hook que pose install-git-hooks.sh), avec sur stdin une
+# ligne par référence poussée : `<réf locale> <sha local> <réf distante> <sha distant>`. Deux contrôles :
+#   1. push-target-guard.sh : aucune destination n'est une branche protégée ;
+#   2. review-gate.sh --commit : chaque référence qui part (branche ou tag, hors effacements) a son rapport
+#      /review-pr valable pour le commit poussé (et la preuve inversée sur une branche de correctif).
+# Exit ≠ 0 = git annule le push. Il marche pour Claude Code, Codex et un humain au terminal.
+# Contournable par « git push --no-verify » : le hook PreToolUse de Claude Code l'interdit à l'agent ;
+# un humain qui le tape assume le contournement.
+# Auto-test : pre-push.test.sh.
+set -u
+
+HOOKS_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "🛑 pre-push : dépôt introuvable — push refusé." >&2; exit 1; }
+INPUT=$(cat)
+
+VERDICT=$(printf '%s\n' "$INPUT" | bash "$HOOKS_DIR/push-target-guard.sh" 2>&1)
+case "$VERDICT" in
+  "bloque "*)
+    echo "🛑 pre-push : destination « ${VERDICT#bloque } » protégée — jamais de push direct sur une branche protégée ; passer par une branche de travail et une PR." >&2
+    exit 1 ;;
+  "muette "*)
+    echo "🛑 pre-push : ${VERDICT#muette } — on ne sait pas ce qui part, push refusé." >&2
+    exit 1 ;;
+  "rien "*) exit 0 ;;
+  "verifie "*) ;;
+  *) echo "🛑 pre-push : verdict illisible de push-target-guard.sh (« $VERDICT ») — push refusé." >&2; exit 1 ;;
+esac
+
+FAIL=0
+while read -r lref lsha rref _rsha; do
+  [ -n "${lsha:-}" ] || continue
+  case "$lsha" in *[!0]*) ;; *) continue ;; esac   # effacement : rien ne part
+  # Un tag annoté pointe un objet tag : on juge le commit qu'il désigne (un tag pousse ce commit et ses parents ;
+  # un tag sur un commit déjà dans la base passe sans rapport).
+  sha=$(git rev-parse --verify -q "$lsha^{commit}" 2>/dev/null) || sha=$lsha
+  # La branche de destination est celle de la PR : c'est elle qui dit « correctif » (FIX_BRANCH_RE).
+  branch=${rref#refs/heads/}
+  bash "$HOOKS_DIR/review-gate.sh" --commit "$ROOT" "$sha" "$branch" || FAIL=1
+done <<< "$INPUT"
+exit "$FAIL"

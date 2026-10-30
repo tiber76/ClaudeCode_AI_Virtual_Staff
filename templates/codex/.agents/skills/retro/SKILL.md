@@ -68,10 +68,24 @@ Pour chaque "a coincé", déterminer :
 - **Coût** : temps perdu, effort, impact utilisateur.
 - **Reproductibilité** : est-ce que ça peut arriver à la prochaine feature ?
 
-### 5. Identifier les pièges nouveaux (→ §12 GUIDE-LLM)
-Pour chaque "a coincé" :
-- Est-ce un piège déjà documenté dans §12 ? Si oui → signaler que la documentation n'a pas suffi (le piège a été oublié).
-- Est-ce un piège nouveau ? → Proposer son ajout à §12.
+### 5. Identifier les pièges nouveaux (→ `docs/GUIDE-LLM.md` §12)
+
+**Routing strict (priorité absolue)** :
+- **Piège technique du projet** (CSS, route API, helper, schéma de données, lib, composant) → **toujours `docs/GUIDE-LLM.md` §12, jamais la mémoire**. Pas d'exception.
+- **Préférence de l'utilisateur** (workflow, ton, process décisionnel) → mémoire de type `feedback`.
+- **Règle de projet transverse** (architecture) → mémoire de type `project`.
+- **Décision business durable** → mémoire de type `feedback`, avec la date dans `description`.
+
+**Budget de l'index mémoire** : la ligne d'index d'une mémoire = nom + déclencheur, **≤ 200 caractères**. Les règles vivent dans le fichier mémoire, jamais dans l'index. Enrichir une mémoire existante = éditer son fichier ; sa ligne d'index reste inchangée (ou raccourcie). Engraisser une ligne d'index est la dérive n°1 (voir `$audit-memory`).
+
+Pour chaque « a coincé » qui est un piège technique :
+
+1. **Filtre « déjà couvert »** obligatoire :
+   ```bash
+   rg -i "<mot-clé central>" docs/GUIDE-LLM.md docs/
+   ```
+   Match → la documentation n'a pas suffi (oubli, formulation à clarifier) : proposer l'édition du piège existant, pas une entrée doublon.
+2. **Vraiment nouveau** : proposer l'ajout à §12, dans le thème approprié, avec sa ligne dans l'index en tête de section.
 
 Format proposé pour §12 :
 ```markdown
@@ -83,15 +97,21 @@ Format proposé pour §12 :
 ```
 
 ### 6. Identifier les apprentissages transverses (→ mémoire)
-Si une leçon est :
-- **Spécifique au projet** (règle de process, convention) → va dans `docs/GUIDE-LLM.md`.
-- **Transverse** (préférence utilisateur, pattern IA, workflow Codex) → va dans `memory/` sous forme de `feedback` ou `project`.
 
-Pour chaque apprentissage transverse identifié, proposer une mémoire au format :
+Une leçon spécifique au projet (règle de process, convention) va dans `docs/GUIDE-LLM.md`. Une leçon transverse (préférence utilisateur, pattern IA, workflow Codex) peut aller en mémoire, **sous ces filtres obligatoires** :
+
+1. **Pas un piège technique** (sinon §12, étape 5).
+2. **Filtre « déjà couvert »** : chercher le mot-clé central dans `MEMORY.md`. Match → consolider par édition de la mémoire existante, jamais de doublon.
+3. **Seuil de 3 occurrences** observées dans des contextes différents. Un seul incident se traite par le corps du commit, pas par la mémoire (sauf demande explicite de l'utilisateur).
+4. **4 critères** : transverse, non évidente, récurrente, actionnable. Les quatre doivent être cochés.
+
+**Plafond : 1 à 2 nouvelles entrées mémoire par rétro.** Au-delà, la granularité est excessive : consolider en une entrée plus large.
+
+Format d'une mémoire :
 ```markdown
 ---
 name: <nom>
-description: <one-liner>
+description: <one-liner précis, utilisé pour le routage futur>
 type: feedback | project | user | reference
 ---
 
@@ -145,7 +165,20 @@ Lister 1-3 actions concrètes, avec propriétaire et échéance (ex: "avant la p
 - **Points de vigilance pour la prochaine itération** : …
 ```
 
-### 9. Proposition de diff (GUIDE-LLM et mémoire)
+### 9. Contrôle d'intégrité de l'index mémoire
+
+Avant le rapport final, vérifier que l'index couvre les fichiers du dossier mémoire :
+
+```bash
+MEM="$HOME/.codex/projects/<dossier-projet>/memory"
+INDEXED=$(grep -oE '\]\([A-Za-z0-9_.-]+\.md\)' "$MEM/MEMORY.md" | sort -u | wc -l | tr -d ' ')
+ON_DISK=$(ls "$MEM" | grep -v '^MEMORY.md$' | wc -l | tr -d ' ')
+echo "Indexées: $INDEXED | Sur disque: $ON_DISK"
+```
+
+Si `ON_DISK > INDEXED` : fichiers orphelins, jamais injectés dans les sessions futures, donc leurs règles sont silencieusement ignorées. Pour chacun : le lire, puis proposer (à valider) de le réindexer, le consolider ou le supprimer. Mentionner le résultat dans « Actions de prévention ». Pour un audit complet : `$audit-memory`.
+
+### 10. Proposition de diff (GUIDE-LLM et mémoire)
 - **Ne PAS éditer** `docs/GUIDE-LLM.md` ou un fichier mémoire directement.
 - **Proposer le diff** (old/new exact) et demander validation explicite avant d'appliquer avec `Edit` ou `Write`.
 - Si validé → appliquer, puis suggérer un commit séparé (`docs(guide-llm): ajout piège XXX vu dans retro YYY`).
@@ -156,6 +189,10 @@ Lister 1-3 actions concrètes, avec propriétaire et échéance (ex: "avant la p
 - Actions vagues ("mieux tester à l'avenir").
 - Éditer `docs/GUIDE-LLM.md` sans validation.
 - Retro hebdo automatique qui devient une corvée — la retro se déclenche sur événement (merge, bug), pas sur calendrier.
+- Créer une mémoire pour un piège technique : toujours §12 (étape 5).
+- Créer une mémoire sans avoir cherché le mot-clé dans `MEMORY.md` : risque de doublon.
+- Promouvoir une leçon en mémoire après un seul incident : seuil de 3 occurrences.
+- Plus de 2 nouvelles entrées mémoire dans la même rétro : consolider.
 
 ## Référence GUIDE-LLM
 - §11 IA Coaching & Management (ton bienveillant — s'applique aussi aux retros)

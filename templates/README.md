@@ -22,13 +22,15 @@ templates/
 ├── backlog.template.md
 ├── claude/
 │   ├── settings.template.json
-│   ├── agents/              # 13 agents + _TEMPLATE-agent.md
-│   ├── skills/              # 16 skills + _TEMPLATE-skill.md
-│   └── commands/            # 16 alias /<nom>
+│   ├── agents/              # 18 agents + _TEMPLATE-agent.md
+│   ├── skills/              # 23 skills + _partage/ + _TEMPLATE-skill.md
+│   ├── commands/            # 23 alias /<nom>
+│   └── hooks/               # porte de review, niveau E2E, preuve de fix
 ├── codex/
 │   ├── AGENTS.md            # regles projet pour Codex
-│   ├── .agents/skills/      # 16 skills Codex
-│   └── .codex/agents/       # 13 agents TOML
+│   ├── .agents/skills/      # 23 skills Codex
+│   ├── .codex/agents/       # 18 agents TOML
+│   └── .codex/hooks/        # memes scripts, lances par les skills
 └── docs/
     ├── GUIDE-LLM.template.md
     ├── EQUIPES-LLM.template.md
@@ -73,13 +75,14 @@ npm run setup -- --target /chemin/vers/projet --provider both --conflicts backup
 
 ## Agents Fournis
 
-Les 13 agents hors template vierge :
+Les 18 agents hors template vierge :
 
 | Agent | Role |
 |---|---|
 | `po-metier` | PO produit |
 | `full-stack-lead` | Tech lead full-stack |
 | `designer-uxui` | Designer UX/UI |
+| `integrateur` | Integration front d'une maquette validee |
 | `qa` | QA lead |
 | `cso` | Securite |
 | `data-engineer` | Data et performance |
@@ -90,20 +93,25 @@ Les 13 agents hors template vierge :
 | `copywriter-brand` | Copy et voice & tone |
 | `content-seo` | SEO et contenu |
 | `marketing-analytics` | Funnel, cohortes, A/B |
+| `full-stack-worker` | Worker frais d'une tranche de `/call-tech-lead` |
+| `review-finder` | Chercheur de `/review-pr` (un angle) |
+| `review-verifier` | Contre-expert de `/review-pr` (un verdict par candidat) |
+| `pre-mortem-adversaire` | Edge cases d'un diff sensible (`/pre-mortem`) |
 
 Supprime les agents inutiles apres setup. Un routing avec peu d'agents bien specialises est souvent meilleur qu'une equipe trop large.
 
 ## Skills Fournis
 
-Les 16 skills :
+Les 23 skills :
 
 | Famille | Skills |
 |---|---|
-| Orchestration | `call-tech-lead`, `call-growth-lead` |
 | Setup | `setup-project` |
-| Tech | `redige-us`, `fullstack-lead-tech`, `investigate-bug`, `review-pr`, `qa-flow`, `ship-pr`, `security-audit` |
+| Orchestration | `call-tech-lead`, `call-growth-lead` |
+| Voie courte | `dev-express` (sujet de taille S), `fix-bug` (bug S avec preuve inversee) |
+| Tech | `redige-us`, `fullstack-lead-tech`, `investigate-bug`, `integre-design`, `review-pr`, `qa-flow`, `verify`, `pre-mortem`, `ship-pr`, `security-audit` |
 | Growth | `redige-brief`, `ship-landing`, `audit-funnel`, `brief-demo`, `retro-campagne` |
-| Transverse | `retro` |
+| Transverse | `retro`, `close-session`, `audit-memory` |
 
 ## Maintenance Codex
 
@@ -123,6 +131,7 @@ Claude Code :
 ```gitignore
 .claude/call-call-tech-lead-runs/
 .claude/call-call-growth-lead-runs/
+.claude/reviews/
 .claude/settings.local.json
 ```
 

@@ -10,6 +10,7 @@ import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { access, cp, mkdir, readdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { constants } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -27,6 +28,8 @@ function sourceFor(targetRelPath) {
   if (targetRelPath.startsWith(".claude/agents/")) return join(TEMPLATES, "claude", "agents", targetRelPath.slice(".claude/agents/".length));
   if (targetRelPath.startsWith(".claude/skills/")) return join(TEMPLATES, "claude", "skills", targetRelPath.slice(".claude/skills/".length));
   if (targetRelPath.startsWith(".claude/commands/")) return join(TEMPLATES, "claude", "commands", targetRelPath.slice(".claude/commands/".length));
+  if (targetRelPath.startsWith(".claude/hooks/")) return join(TEMPLATES, "claude", "hooks", targetRelPath.slice(".claude/hooks/".length));
+  if (targetRelPath.startsWith(".codex/hooks/")) return join(TEMPLATES, "codex", ".codex", "hooks", targetRelPath.slice(".codex/hooks/".length));
   if (targetRelPath.startsWith(".agents/skills/")) return join(TEMPLATES, "codex", ".agents", "skills", targetRelPath.slice(".agents/skills/".length));
   if (targetRelPath.startsWith(".codex/agents/")) return join(TEMPLATES, "codex", ".codex", "agents", targetRelPath.slice(".codex/agents/".length));
   if (targetRelPath.startsWith("docs/formats/")) return join(TEMPLATES, "docs", "formats", targetRelPath.slice("docs/formats/".length));
@@ -327,6 +330,19 @@ async function main() {
     }
 
     const log = await executeActions(planned);
+
+    // Hook git pre-push : (re)branché apres chaque update, sinon plus rien ne controle les push (Codex surtout).
+    for (const dir of [".claude", ".codex"]) {
+      const script = join(targetRoot, dir, "hooks", "install-git-hooks.sh");
+      if (!(await exists(script))) continue;
+      const result = spawnSync("bash", [script], { cwd: targetRoot, encoding: "utf8" });
+      const out = `${result.stdout || ""}${result.stderr || ""}`.trim().replace(/\n+/g, " ");
+      log.push(result.status === 0
+        ? `hook git pre-push : ${out}`
+        : `hook git pre-push NON branche — lancer \`bash ${dir}/hooks/install-git-hooks.sh\` : ${out}`);
+      if (result.status !== 0) console.log(`\n⚠️  hook git pre-push non branche : ${out}`);
+      break;
+    }
 
     const report = [
       "# Virtual Staff Kit — update report",

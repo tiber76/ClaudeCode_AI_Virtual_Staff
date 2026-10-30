@@ -7,8 +7,9 @@ Ce dossier est l'adapter Codex du starter kit d'equipes virtuelles.
 ```
 codex/
 ├── AGENTS.md                 # regles projet lues par Codex
-├── .agents/skills/           # 16 skills Codex, un dossier par workflow
-└── .codex/agents/            # 13 agents specialises Codex en TOML
+├── .agents/skills/           # 23 skills Codex, un dossier par workflow (+ _partage/)
+├── .codex/agents/            # 18 agents specialises Codex en TOML
+└── .codex/hooks/             # scripts de controle (review, E2E, preuve de fix) appeles par les skills
 ```
 
 ## Installation dans un projet cible

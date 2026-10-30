@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { access, readdir, readFile } from "node:fs/promises";
+import { access, readdir, readFile, stat } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 import { constants } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -71,11 +72,35 @@ async function main() {
   const codexSkills = await listFiles(join(ROOT, "templates", "codex", ".agents", "skills"), (file) => file.endsWith("SKILL.md"));
   const codexAgents = await listFiles(join(ROOT, "templates", "codex", ".codex", "agents"), (file) => file.endsWith(".toml"));
 
-  if (claudeAgents.length !== 13) fail(`templates/claude/agents: attendu 13 agents, obtenu ${claudeAgents.length}`);
-  if (claudeSkills.length !== 16) fail(`templates/claude/skills: attendu 16 skills, obtenu ${claudeSkills.length}`);
-  if (claudeCommands.length !== 16) fail(`templates/claude/commands: attendu 16 commandes, obtenu ${claudeCommands.length}`);
-  if (codexSkills.length !== 16) fail(`templates/codex/.agents/skills: attendu 16 skills, obtenu ${codexSkills.length}`);
-  if (codexAgents.length !== 13) fail(`templates/codex/.codex/agents: attendu 13 agents, obtenu ${codexAgents.length}`);
+  const EXPECTED_AGENTS = 18;
+  const EXPECTED_SKILLS = 23;
+  if (claudeAgents.length !== EXPECTED_AGENTS) fail(`templates/claude/agents: attendu ${EXPECTED_AGENTS} agents, obtenu ${claudeAgents.length}`);
+  if (claudeSkills.length !== EXPECTED_SKILLS) fail(`templates/claude/skills: attendu ${EXPECTED_SKILLS} skills, obtenu ${claudeSkills.length}`);
+  if (claudeCommands.length !== EXPECTED_SKILLS) fail(`templates/claude/commands: attendu ${EXPECTED_SKILLS} commandes, obtenu ${claudeCommands.length}`);
+  if (codexSkills.length !== EXPECTED_SKILLS) fail(`templates/codex/.agents/skills: attendu ${EXPECTED_SKILLS} skills, obtenu ${codexSkills.length}`);
+  if (codexAgents.length !== EXPECTED_AGENTS) fail(`templates/codex/.codex/agents: attendu ${EXPECTED_AGENTS} agents, obtenu ${codexAgents.length}`);
+
+  // Chaque skill a sa commande slash, et inversement.
+  const skillNames = new Set(claudeSkills.map((file) => file.split("/").at(-2)));
+  const commandNames = new Set(claudeCommands.map((file) => file.split("/").pop().replace(/\.md$/, "")));
+  for (const name of skillNames) if (!commandNames.has(name)) fail(`templates/claude/commands/${name}.md manquant`);
+  for (const name of commandNames) if (!skillNames.has(name)) fail(`templates/claude/commands/${name}.md sans skill`);
+
+  // v0.5.0+: hooks executables et syntaxe bash valide.
+  for (const dir of [join(ROOT, "templates", "claude", "hooks"), join(ROOT, "templates", "codex", ".codex", "hooks")]) {
+    const hooks = await listFiles(dir, (file) => file.endsWith(".sh") || file.endsWith("/pre-push"));
+    // config.sh et review-dir.sh sont sourcés, pas exécutés : seule la syntaxe compte.
+    const sourced = new Set(["config.sh", "review-dir.sh"]);
+    if (hooks.length === 0) fail(`${dir}: aucun hook`);
+    for (const file of hooks) {
+      if (!sourced.has(file.split("/").pop()) && ((await stat(file)).mode & 0o111) === 0) fail(`${file}: non executable (chmod +x)`);
+      try {
+        execFileSync("bash", ["-n", file], { stdio: "pipe" });
+      } catch (error) {
+        fail(`${file}: syntaxe bash invalide\n${error.stderr}`);
+      }
+    }
+  }
 
   await validateMarkdownFrontmatter([...claudeAgents, ...claudeSkills, ...codexSkills], ["name", "description"]);
 
