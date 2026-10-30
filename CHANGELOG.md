@@ -23,13 +23,14 @@ Cette release porte dans le kit public cinq mois de rodage sur un projet privé 
 - **Fichiers partagés** `skills/_partage/` : `fil-de-progression.md` (plan de route, lignes `▶/✓ Étape N/M`, blocs `🟥/🟧 À TOI`, restitution sans jargon, demande de validation) et `test-manuel-local.md` (l'agent joue lui-même le parcours dans un vrai navigateur).
 - **5 agents** : `full-stack-worker` (une tranche = un worker frais), `review-finder` et `review-verifier` (pipeline de review), `pre-mortem-adversaire`, `integrateur`.
 - **Hooks Claude Code** `templates/claude/hooks/` (câblés dans `settings.template.json`) :
-  - `review-gate.sh` — bloque `git push` / `gh pr create` sans rapport `.claude/reviews/<sha HEAD>.md` au palier calculé ; sur `fix/*`, exige aussi la preuve inversée. Bypass : une ligne `SKIP-review-pr: <raison>` dans le body du commit, sur instruction humaine. Reconnaît les formes usuelles de push (`cd … && git push`, `bash -c`, `git -c …`) ; refuse un commit et un push dans le même appel.
+  - `pre-push` + `install-git-hooks.sh` — **hook git** qui contrôle ce qui part réellement (les lignes que git donne au hook, pas le texte de la commande) : destination protégée refusée, et chaque branche poussée doit avoir le rapport `.claude/reviews/<sha>.md` du commit poussé, au palier calculé (preuve inversée en plus sur `fix/*`). Vaut pour Claude Code, Codex et le terminal. `install.mjs` le branche ; un hook `pre-push` existant ou `core.hooksPath` (husky) n'est jamais écrasé : la ligne à ajouter est affichée.
+  - `review-gate.sh` — juge un commit (`--commit`, appelé par le hook git) ; en hook PreToolUse de Claude Code, refuse `push --no-verify`, tout réglage de `core.hooksPath`, un push vers un dépôt sans le hook git, et juge HEAD avant `gh pr create`. Bypass : une ligne `SKIP-review-pr: <raison>` dans le body du commit, sur instruction humaine.
   - `review-level.sh` — palier de review depuis le diff : `docs` (1 chercheur), `leger` (5), `complet` (8).
-  - `push-target-guard.sh` — refuse un push direct sur les branches protégées.
+  - `push-target-guard.sh` — lit les références poussées et refuse une destination protégée (création, mise à jour, suppression).
   - `e2e-level.sh` + `e2e-sensitive.txt` — niveau d'E2E avant PR (`aucun` / `specs` / `smoke`), calculé, jamais jugé ; le nightly fait foi.
   - `fix-proof.sh` — rejoue le test sans le fix dans un worktree temporaire (l'arbre réel n'est jamais touché).
   - `config.sh` — branches de base et protégées (placeholders remplis par `/setup-project`) ; auto-tests `*.test.sh`.
-- Adapter Codex : les mêmes scripts dans `.codex/hooks/` (lancés par les skills, Codex n'ayant pas de hook automatique) ; fichiers d'appui des skills et `_partage/` désormais générés.
+- Adapter Codex : les mêmes scripts dans `.codex/hooks/`, avec le même hook git `pre-push` (la porte n'est plus une simple discipline côté Codex) ; fichiers d'appui des skills et `_partage/` désormais générés.
 - `MIGRATION-v0.5.md`, manifest `scripts/manifests/v0.5.0.json`.
 
 ### Changed
@@ -42,7 +43,7 @@ Cette release porte dans le kit public cinq mois de rodage sur un projet privé 
 - `CLAUDE.md.template` : quelle voie choisir, porte de review, discipline TDD (qualité du RED, sanction), recevoir une review sans acquiescement réflexe, test manuel local, restitution en 5 questions, fil de progression, « une PR = un contexte frais ».
 - `scripts/generate-codex-templates.mjs` : ne régénère plus `AGENTS.md` (maintenu à la main depuis la v0.4.0), réécriture des commandes slash robuste aux chemins (`.claude/skills/verify/` n'est plus touché).
 - `scripts/validate-templates.mjs` : 18 agents / 23 skills, une commande par skill, hooks exécutables et syntaxe bash valide.
-- `install.mjs` : `.claude/reviews/` et `.codex/reviews/` ajoutés au `.gitignore`.
+- `install.mjs` : `.claude/reviews/` et `.codex/reviews/` ajoutés au `.gitignore` ; branche le hook git `pre-push`.
 
 ### Migration depuis 0.4.0
 

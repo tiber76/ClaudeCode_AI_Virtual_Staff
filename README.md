@@ -144,17 +144,18 @@ Plus `_partage/` (fil de progression, test manuel local), lus par les skills.
 
 ### Hooks (Claude Code)
 
-`.claude/hooks/`, cables dans `settings.local.json`. Prérequis : `bash` et `jq`.
+`.claude/hooks/`. Le controle des push passe par un **hook git `pre-push`** (branche par `install-git-hooks.sh`, lance par `install.mjs`) : git lui donne les commits et les branches qui partent reellement, quelle que soit l'ecriture de la commande, et il vaut pour Claude Code, Codex et un humain au terminal. Le hook Claude Code (`review-gate.sh`, cable dans `settings.local.json`) empeche l'agent de le desactiver et juge HEAD avant `gh pr create`. Prérequis : `bash` et `jq`.
 
 | Hook | Role |
 |---|---|
-| `review-gate.sh` | bloque `git push` / `gh pr create` sans rapport `/review-pr` pour le commit HEAD, au palier calcule |
+| `pre-push` + `install-git-hooks.sh` | hook git : refuse un push vers une branche protegee ou d'un commit sans rapport `/review-pr` valable |
+| `review-gate.sh` | juge un commit (rapport, palier, preuve de fix) ; cote Claude Code, refuse `--no-verify` / `core.hooksPath` et juge HEAD avant `gh pr create` |
 | `review-level.sh` | calcule le palier de review depuis le diff : `docs` (1 chercheur), `leger` (5), `complet` (8) |
-| `push-target-guard.sh` | refuse un push direct sur les branches protegees |
+| `push-target-guard.sh` | lit les references poussees : destination protegee ou non |
 | `e2e-level.sh` | niveau d'E2E avant PR depuis le diff : `aucun`, `specs`, `smoke` (jamais juge par l'agent) |
 | `fix-proof.sh` | preuve inversee d'un fix : le test echoue sans le fix, passe avec |
 
-Reglages dans `.claude/hooks/config.sh` (branches) et `e2e-sensitive.txt` (chemins sensibles). Bypass de la porte : une ligne `SKIP-review-pr: <raison>` dans le body du commit, sur instruction humaine uniquement. Prerequis : `bash` et `jq`. Cote Codex, les memes scripts sont copies dans `.codex/hooks/` et se lancent avec `--check` avant le push.
+Reglages dans `.claude/hooks/config.sh` (branches) et `e2e-sensitive.txt` (chemins sensibles). Bypass de la porte : une ligne `SKIP-review-pr: <raison>` dans le body du commit, sur instruction humaine uniquement. Prerequis : `bash` et `jq`. Cote Codex, les memes scripts sont copies dans `.codex/hooks/` et le meme hook git `pre-push` s'applique.
 
 ### Documentation Projet
 

@@ -88,7 +88,7 @@ async function main() {
 
   // v0.5.0+: hooks executables et syntaxe bash valide.
   for (const dir of [join(ROOT, "templates", "claude", "hooks"), join(ROOT, "templates", "codex", ".codex", "hooks")]) {
-    const hooks = await listFiles(dir, (file) => file.endsWith(".sh"));
+    const hooks = await listFiles(dir, (file) => file.endsWith(".sh") || file.endsWith("/pre-push"));
     // config.sh et review-dir.sh sont sourcés, pas exécutés : seule la syntaxe compte.
     const sourced = new Set(["config.sh", "review-dir.sh"]);
     if (hooks.length === 0) fail(`${dir}: aucun hook`);

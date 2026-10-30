@@ -1,114 +1,30 @@
 #!/usr/bin/env bash
-# push-target-guard.sh — refuse un push direct sur une branche protégée (défaut : develop, main).
+# push-target-guard.sh — refuse un push direct sur une branche protégée (défaut : la base, develop, main, master).
 #
 # Le garde regarde CE QUI PART (la destination des références poussées), jamais la branche du disque :
 # on bloque quand la DESTINATION est une branche protégée, quelle que soit l'opération — création,
 # mise à jour, suppression. Tout le reste passe, y compris l'effacement d'une branche de travail.
 # Les branches protégées se règlent dans PROTECTED_BRANCHES (review-dir.sh / config.sh optionnel).
 #
-# Deux modes, détectés sur l'entrée standard :
-#
-# 1. Hook PreToolUse de Claude Code (stdin = payload JSON, jq requis). Analyse la commande Bash :
-#    chaque push est jugé sur sa destination. Exit 2 + message sur stderr = bloqué.
-#      - `<remote> <src>:<dst>` ou `<remote> <dst>` : destination explicite ;
-#      - sans référence : la branche courante part (refusée si protégée) ;
-#      - `--all`, `--mirror` : refusés (ils poussent aussi les branches protégées) ;
-#      - push via une commande indéterminée ($GIT, eval) : refusé (on ne sait pas ce qui part).
-#    Formes reconnues : celles de parse_push_cmd (review-dir.sh) — -C, -c, options globales,
-#    « cd <dossier> && git push », « bash -c "git push" », chemin absolu de git.
-#    Sans hook (Codex, terminal) : push-target-guard.sh --check [dossier] juge « git push » depuis ce dossier.
-#
-# 2. Hook git pre-push (stdin = lignes `<réf locale> <sha local> <réf distante> <sha distant>`).
-#    Sortie : EXACTEMENT une ligne, code de sortie toujours 0 (le verdict est la ligne) :
-#      bloque <branche>   une référence au moins vise une branche protégée
-#      rien <n>           n références, toutes des effacements : rien ne part
-#      verifie <n>        au moins une référence apporte des objets : les autres portes se jouent
-#      muette <raison>    ligne non conforme : on ne sait pas ce qui part, le hook appelant refuse
+# Appelé par le hook git pre-push (pre-push), lancé depuis le dépôt : stdin = les lignes que git donne
+# au hook, `<réf locale> <sha local> <réf distante> <sha distant>`. Git les écrit lui-même : aucune
+# forme de commande (variable, alias, chemin avec espace) ne change ce qui est jugé.
+# Sortie : EXACTEMENT une ligne, code de sortie toujours 0 (le verdict est la ligne) :
+#   bloque <branche>   une référence au moins vise une branche protégée
+#   rien <n>           n références, toutes des effacements : rien ne part
+#   verifie <n>        au moins une référence apporte des objets : la porte de review se joue
+#   muette <raison>    ligne non conforme : on ne sait pas ce qui part, le hook appelant refuse
 #
 # Auto-test : push-target-guard.test.sh.
 set -u
 set -f   # aucune expansion de chemin : une référence n'est jamais un motif
-unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX GIT_COMMON_DIR
+unset GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX
 
 . "$(cd "$(dirname "$0")" && pwd)/review-dir.sh"
+# Avec le défaut, la base résolue du dépôt (ex. trunk) est protégée elle aussi.
+_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) && protect_base "$_ROOT"
 
-if [ "${1:-}" = "--check" ]; then
-  INPUT=$(jq -n --arg d "${2:-$PWD}" '{tool_input:{command:"git push"},cwd:$d}' 2>/dev/null) \
-    || { echo "🛑 push-target-guard --check : jq requis" >&2; exit 2; }
-else
-  INPUT=$(cat)
-fi
-FIRST=$(printf '%s' "$INPUT" | tr -d '[:space:]' | cut -c1)
-
-# ── Mode 1 : PreToolUse ──────────────────────────────────────────────────────────────────────
-if [ "$FIRST" = "{" ]; then
-  CMD=""; CWD=""
-  if command -v jq >/dev/null 2>&1 \
-     && CMD=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null) \
-     && CWD=$(printf '%s' "$INPUT" | jq -r '.cwd // empty' 2>/dev/null); then :
-  else
-    if printf '%s' "$INPUT" | grep -qE 'git[^"]*push'; then
-      echo "🛑 push-target-guard : payload illisible (jq absent ou en erreur) alors que la commande ressemble à un push — fermé par défaut." >&2
-      exit 2
-    fi
-    exit 0
-  fi
-  [ -n "$CMD" ] || exit 0
-
-  block() {
-    echo "🛑 push-target-guard : $1 — jamais de push direct sur une branche protégée ($PROTECTED_BRANCHES) ; passer par une branche de travail et une PR." >&2
-    exit 2
-  }
-
-  TAB=$(printf '\t')
-  while IFS="$TAB" read -r kind repo_dir args; do
-    case "$kind" in
-      opaque) block "push lancé par une commande indéterminée (variable, eval) : destination inconnue" ;;
-      push) ;;
-      *) continue ;;
-    esac
-    { [ -n "$repo_dir" ] && [ -d "$repo_dir" ]; } || repo_dir="${CWD:-$PWD}"
-    protect_base "$repo_dir"
-    positional=()
-    # shellcheck disable=SC2206
-    toks=($args); n=${#toks[@]}; i=0
-    while [ "$i" -lt "$n" ]; do
-      t=${toks[$i]}
-      case "$t" in
-        --all|--mirror) block "« push $t » pousse aussi les branches protégées" ;;
-        -o|--push-option|--repo|--receive-pack|--exec) i=$((i+1)) ;;   # l'option prend un argument
-        -*) ;;
-        *) positional+=("$t") ;;
-      esac
-      i=$((i+1))
-    done
-    # positional[0] = remote, le reste = références
-    refs=()
-    [ "${#positional[@]}" -le 1 ] || refs=("${positional[@]:1}")
-    if [ "${#refs[@]}" -eq 0 ]; then
-      cur=$(git -C "$repo_dir" branch --show-current 2>/dev/null || true)
-      if [ -n "$cur" ] && is_protected "$cur"; then block "la branche courante « $cur » est protégée"; fi
-      continue
-    fi
-    for r in "${refs[@]}"; do
-      r=${r#+}                      # +force
-      case "$r" in
-        *:*) dst=${r#*:} ;;         # <src>:<dst> → dst (« :dst » = suppression, même cible)
-        *)   dst=$r ;;
-      esac
-      dst=${dst#refs/heads/}
-      if [ "$dst" = "HEAD" ]; then
-        dst=$(git -C "$repo_dir" branch --show-current 2>/dev/null || true)
-      fi
-      if [ -n "$dst" ] && is_protected "$dst"; then block "destination « $dst » protégée"; fi
-    done
-  done <<EOF_ACTIONS
-$(parse_push_cmd "$CMD" "${CWD:-$PWD}")
-EOF_ACTIONS
-  exit 0
-fi
-
-# ── Mode 2 : pre-push git ────────────────────────────────────────────────────────────────────
+INPUT=$(cat)
 CR=$(printf '\r')
 BLOQUE=""; MUETTE=""; N=0; SUPPR=0; LIGNE=0
 lref=""; lsha=""; rref=""; rsha=""; extra=""

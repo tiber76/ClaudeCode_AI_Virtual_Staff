@@ -52,12 +52,7 @@ Ou à la main : `grep -rn "{{" .claude/ | grep -v "{{#IF" | grep -v "{{/IF}}"` p
         {
           "type": "command",
           "timeout": 15,
-          "command": "if [ -x \"$CLAUDE_PROJECT_DIR/.claude/hooks/review-gate.sh\" ]; then exec \"$CLAUDE_PROJECT_DIR/.claude/hooks/review-gate.sh\"; fi; if grep -qE '(git|gh)[^\"]*(push|pr create)'; then echo \"🛑 hook review-gate.sh absent ou non exécutable (chmod +x .claude/hooks/*.sh) : push refusé\" >&2; exit 2; fi"
-        },
-        {
-          "type": "command",
-          "timeout": 15,
-          "command": "if [ -x \"$CLAUDE_PROJECT_DIR/.claude/hooks/push-target-guard.sh\" ]; then exec \"$CLAUDE_PROJECT_DIR/.claude/hooks/push-target-guard.sh\"; fi; if grep -qE '(git|gh)[^\"]*(push|pr create)'; then echo \"🛑 hook push-target-guard.sh absent ou non exécutable (chmod +x .claude/hooks/*.sh) : push refusé\" >&2; exit 2; fi"
+          "command": "if [ -x \"$CLAUDE_PROJECT_DIR/.claude/hooks/review-gate.sh\" ]; then exec \"$CLAUDE_PROJECT_DIR/.claude/hooks/review-gate.sh\"; fi; if grep -qE '(git|gh)[^\"]*(push|pr create)'; then echo \"🛑 hook review-gate.sh absent ou non exécutable (chmod +x .claude/hooks/*.sh .claude/hooks/pre-push) : push refusé\" >&2; exit 2; fi"
         }
       ]
     }
@@ -65,17 +60,22 @@ Ou à la main : `grep -rn "{{" .claude/ | grep -v "{{#IF" | grep -v "{{/IF}}"` p
 }
 ```
 
-Recopie la version exacte depuis `templates/claude/settings.template.json` si elle diffère de cet extrait : c'est elle qui fait foi. Si un hook manque ou perd son bit exécutable, ce câblage refuse les push (message « hook … absent ou non exécutable ») au lieu de laisser passer en silence.
+Recopie la version exacte depuis `templates/claude/settings.template.json` si elle diffère de cet extrait : c'est elle qui fait foi. Si le hook manque ou perd son bit exécutable, ce câblage refuse les push (message « hook … absent ou non exécutable ») au lieu de laisser passer en silence.
 
-Prérequis : `bash` et `jq`. Sans `jq`, les deux hooks ferment la porte sur toute commande qui ressemble à un push.
+Ce hook Claude Code ne juge pas les push lui-même : c'est le **hook git `pre-push`** qui le fait, sur ce que git envoie réellement. Le hook Claude empêche l'agent de le désactiver (`--no-verify`, `core.hooksPath`), refuse un push tant que le hook git n'est pas branché, et juge HEAD avant `gh pr create`.
+
+Prérequis : `bash` et `jq`. Sans `jq`, le hook Claude ferme la porte sur toute commande qui ressemble à un push.
 
 Puis :
 
 ```bash
-chmod +x .claude/hooks/*.sh
+chmod +x .claude/hooks/*.sh .claude/hooks/pre-push
+bash .claude/hooks/install-git-hooks.sh
 for t in .claude/hooks/*.test.sh; do bash "$t"; done
 echo ".claude/reviews/" >> .gitignore
 ```
+
+`install-git-hooks.sh` pose `.git/hooks/pre-push` (partagé par les worktrees) ; une fois par clone. Si un hook `pre-push` existe déjà ou si `core.hooksPath` est réglé (husky…), il ne touche à rien et affiche la ligne à ajouter au hook existant. `bash .claude/hooks/install-git-hooks.sh --status` dit s'il est branché.
 
 Adapte `.claude/hooks/e2e-sensitive.txt` (chemins qui déclenchent le smoke E2E) et, au besoin, `REVIEW_SENSITIVE_RE` dans `config.sh` (chemins qui imposent le palier de review `complet`) à tes vrais dossiers.
 
@@ -90,15 +90,15 @@ Adapte `.claude/hooks/e2e-sensitive.txt` (chemins qui déclenchent le smoke E2E)
 
 - Petit sujet → `/dev-express` ; bug S → `/fix-bug` ; feature → `/call-tech-lead`.
 - Avant chaque commit applicatif → `/verify`.
-- `/ship-pr` lance lui-même `/review-pr` : plus besoin de le lancer à la main. Un push sans rapport de review pour le commit HEAD est bloqué par la porte.
+- `/ship-pr` lance lui-même `/review-pr` : plus besoin de le lancer à la main. Un push d'une branche dont le commit poussé n'a pas de rapport de review est refusé par git (hook `pre-push`).
 - Bypass de la porte : une ligne `SKIP-review-pr: <raison>` en début de ligne dans le body du commit, **uniquement sur instruction humaine**. Une phrase qui cite la convention ne déclenche rien.
-- Commit et push dans la même commande (`git commit … && git push`) : refusé par la porte, qui lit HEAD avant le commit. Pousser dans un appel séparé, après la review du nouveau HEAD.
+- `git push --no-verify` saute le hook : interdit à l'agent ; un humain qui le tape assume le contournement.
 - Fin de session en worktree → `/close-session`.
 
 ## FAQ
 
 **La porte bloque mon push alors que j'ai lancé `/review-pr`.** Le rapport est lié au SHA : tout nouveau commit (même une correction de review) demande une nouvelle review. Relancer `/review-pr` sur HEAD.
 
-**Je ne veux pas des hooks.** Ne câble pas l'étape 3 : les skills fonctionnent sans, la porte n'est alors qu'une consigne.
+**Je ne veux pas des hooks.** Ne câble pas l'étape 3 et retire `.git/hooks/pre-push` : les skills fonctionnent sans, la porte n'est alors qu'une consigne.
 
-**J'utilise Codex.** Codex n'a pas de hook automatique : les scripts sont dans `.codex/hooks/` et `AGENTS.md` demande de lancer `bash .codex/hooks/review-gate.sh --check` puis `bash .codex/hooks/push-target-guard.sh --check` depuis la racine avant chaque push (exit 2 = ne pas pousser). La porte y est une discipline, pas un blocage.
+**J'utilise Codex.** Le contrôle des push est un hook git : il s'applique à Codex comme à Claude Code. Les scripts sont dans `.codex/hooks/` ; brancher le hook avec `bash .codex/hooks/install-git-hooks.sh`. Seule différence : Codex n'a pas d'équivalent du hook PreToolUse, donc rien n'y empêche l'agent de taper `--no-verify` — `AGENTS.md` le lui interdit.

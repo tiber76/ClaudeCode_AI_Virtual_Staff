@@ -271,12 +271,13 @@ Les agents de mécanique (`full-stack-worker`, `review-finder`, `review-verifier
 
 ### Étape 4 bis — Hooks
 
-0. Prérequis : `jq` installé (les hooks `review-gate` et `push-target-guard` en ont besoin et ferment la porte sans lui).
-1. `chmod +x .claude/hooks/*.sh` (au cas où la copie a perdu le bit exécutable).
+0. Prérequis : `jq` installé (le hook `review-gate` en a besoin et ferme la porte sans lui).
+1. `chmod +x .claude/hooks/*.sh .claude/hooks/pre-push` (au cas où la copie a perdu le bit exécutable).
+1 bis. Brancher le hook git : `bash .claude/hooks/install-git-hooks.sh` (puis `--status` doit dire « branché »). C'est lui qui refuse un push vers une branche protégée ou d'un commit sans rapport de review. S'il existe déjà un hook `pre-push` ou un `core.hooksPath` (husky…), le script affiche la ligne à ajouter : la proposer à l'utilisateur, ne jamais écraser son hook.
 2. Vérifier `.claude/hooks/config.sh` : `REVIEW_BASE_BRANCH` et `PROTECTED_BRANCHES` remplis, et renseigner `FIX_BRANCH_RE` et `E2E_DIR`.
 3. Adapter `.claude/hooks/e2e-sensitive.txt` (chemins qui déclenchent le smoke E2E) et, si besoin, `REVIEW_SENSITIVE_RE` dans `config.sh` (chemins qui déclenchent le palier de review `complet`) aux dossiers réels du projet.
 4. Lancer les auto-tests : `for t in .claude/hooks/*.test.sh; do bash "$t"; done`.
-5. Les hooks sont câblés dans `.claude/settings.local.json` (issu de `settings.template.json`). Pour que toute l'équipe les ait, proposer de déplacer le bloc `hooks` dans `.claude/settings.json` versionné.
+5. Le hook Claude Code est câblé dans `.claude/settings.local.json` (issu de `settings.template.json`). Pour que toute l'équipe les ait, proposer de déplacer le bloc `hooks` dans `.claude/settings.json` versionné.
 
 ### Étape 5 — Vérification finale
 

@@ -75,14 +75,40 @@ is_protected() {
   return 1
 }
 
+# Hook git pre-push du kit : un fichier qui porte ce marqueur appelle .claude/hooks/pre-push.
+PREPUSH_MARK="claude-kit:pre-push"
+
+# prepush_target <racine> → le fichier hook pre-push que git exécute pour ce dépôt (stdout).
+# core.hooksPath réglé (husky…) : <hooksPath>/pre-push, ou le pre-push du dossier parent quand le
+# hooksPath se termine par « _ » (husky v9 : .husky/_ est généré, le hook éditable est .husky/pre-push).
+# Sinon : <dossier git commun>/hooks/pre-push (partagé par tous les worktrees du dépôt).
+prepush_target() {
+  local root="$1" hp common
+  hp=$(git -C "$root" config --get core.hooksPath 2>/dev/null || true)
+  if [ -n "$hp" ]; then
+    case "$hp" in /*) ;; *) hp="$root/$hp" ;; esac
+    if [ "$(basename "$hp")" = _ ]; then printf '%s\n' "$(dirname "$hp")/pre-push"; else printf '%s\n' "$hp/pre-push"; fi
+    return
+  fi
+  common=$(cd "$root" && cd "$(git rev-parse --git-common-dir)" 2>/dev/null && pwd -P) || return 1
+  printf '%s\n' "$common/hooks/pre-push"
+}
+
+# prepush_installed <racine> → 0 si le hook pre-push du kit est branché sur ce dépôt.
+prepush_installed() {
+  local f; f=$(prepush_target "$1") || return 1
+  [ -f "$f" ] && grep -q "$PREPUSH_MARK" "$f" 2>/dev/null
+}
+
 # parse_push_cmd <commande> <dossier courant> → une ligne par action trouvée, dans l'ordre de la commande :
 #   push<TAB><dossier visé><TAB><arguments après « push », séparés par des espaces>
 #   pr<TAB><dossier visé>                      (gh pr create)
-#   commit<TAB><dossier visé>                  (un commit avant le push change HEAD sous la porte)
+#   commit<TAB><dossier visé>                  (un commit avant l'ouverture de PR change HEAD sous la porte)
 #   opaque<TAB><dossier><TAB><segment>         (« push » via une commande indéterminée : $VAR, eval)
 # Les guillemets tombent (« bash -c "git push" » devient une suite de jetons) ; ; | & ( ) et retours
 # à la ligne coupent les segments ; « cd <dossier> » change le dossier des segments suivants ; les options
-# globales de git (-C, -c, --git-dir…) sont sautées. Le doute penche vers « ça pousse » (porte fermée).
+# globales de git (-C, -c, --git-dir…) sont sautées. Sert à trouver les dépôts visés et les ouvertures de
+# PR : le contrôle exact de ce qui part est fait par le hook git pre-push, jamais par cette lecture.
 parse_push_cmd() {
   local cmd="$1" cur="${2:-$PWD}" seg t i n dir tool sub args _f
   local -a toks
@@ -99,7 +125,7 @@ parse_push_cmd() {
     fi
     i=0
     while [ "$i" -lt "$n" ]; do
-      case "${toks[$i]}" in git|*/git|gh|*/gh) break ;; esac
+      case "${toks[$i]}" in git|*/git|'\git'|gh|*/gh|'\gh') break ;; esac
       i=$((i+1))
     done
     if [ "$i" -ge "$n" ]; then
@@ -108,7 +134,7 @@ parse_push_cmd() {
       esac
       continue
     fi
-    tool=${toks[$i]##*/}; i=$((i+1)); dir=$cur
+    tool=${toks[$i]##*/}; tool=${tool#\\}; i=$((i+1)); dir=$cur
     if [ "$tool" = git ]; then
       while [ "$i" -lt "$n" ]; do
         case "${toks[$i]}" in

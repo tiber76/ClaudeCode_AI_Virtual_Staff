@@ -147,7 +147,7 @@ Invoquer via le **Skill tool**, jamais en bash : `Skill(skill="review-pr")`. Le 
 ```bash
 git push -u origin <nom-branche>
 ```
-Le hook `review-gate` bloque si le rapport `.codex/reviews/<sha HEAD>.md` manque ou n'est pas conforme (verdict « oui », aucun « À trancher » non traité, niveau ≥ palier calculé) et, sur une branche `fix/*`, si la preuve inversée de `fix-proof.sh` manque pour HEAD. Le run E2E vert n'est pas vérifié par la porte : c'est l'étape 5 qui en répond, et la PR le cite. Le message dit laquelle : revenir à l'étape 8 bis. Après le push, vérifier `git ls-remote origin refs/heads/<branche>` : « pre-push OK » ne prouve pas que la branche est partie.
+Le hook git `pre-push` (qui appelle `review-gate.sh`) refuse le push si le rapport `.codex/reviews/<sha HEAD>.md` manque ou n'est pas conforme (verdict « oui », aucun « À trancher » non traité, niveau ≥ palier calculé) et, sur une branche `fix/*`, si la preuve inversée de `fix-proof.sh` manque pour HEAD. Le run E2E vert n'est pas vérifié par la porte : c'est l'étape 5 qui en répond, et la PR le cite. Le message dit laquelle : revenir à l'étape 8 bis. Après le push, vérifier `git ls-remote origin refs/heads/<branche>` : « pre-push OK » ne prouve pas que la branche est partie.
 
 ### 10. Description de PR
 
